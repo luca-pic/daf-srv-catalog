@@ -1,0 +1,159 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog-manager
+  labels:
+    app: catalog-manager
+spec:
+  type: NodePort
+  ports:
+  - port: 9000
+    protocol: TCP
+    name: http
+  selector:
+    app: catalog-manager
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: catalog-manager-deployment
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: catalog-manager
+    spec:
+      hostAliases:
+      - ip: "192.168.0.23"
+        hostnames:
+          - "master.platform.daf.gov.it"
+          - "master"
+      - ip: "192.168.0.22"
+        hostnames:
+          - "slave1.platform.daf.gov.it"
+          - "slave1"
+      - ip: "192.168.0.24"
+        hostnames:
+          - "slave2.platform.daf.gov.it"
+          - "slave2"
+      - ip: "192.168.0.36"
+        hostnames:
+          - "slave3.platform.daf.gov.it"
+          - "slave3"
+      - ip: "192.168.0.26"
+        hostnames:
+          - "slave4.platform.daf.gov.it"
+          - "slave4"
+      - ip: "192.168.0.26"
+        hostnames:
+          - "slave4.platform.daf.gov.it"
+          - "slave4"
+      - ip: "192.168.0.20"
+        hostnames:
+          - "edge1.platform.daf.gov.it"
+          - "edge1"
+      - ip: "192.168.0.21"
+        hostnames:
+          - "edge2.platform.daf.gov.it"
+          - "edge2"
+      - ip: "192.168.0.27"
+        hostnames:
+          - "edge3.platform.daf.gov.it"
+          - "edge3"
+      - ip: "192.168.0.29"
+        hostnames:
+          - "idm.daf.gov.it"
+          - "idm"
+      containers:
+      - name: catalog-manager
+        image: nexus.daf.teamdigitale.it/daf-catalog-manager:2.0.0-SNAPSHOT
+        env:
+        - name: JAVA_OPTS
+          value: "-server -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:+PerfDisableSharedMem -XX:+ParallelRefProcEnabled -Xmx2g -Xms2g -XX:MaxPermSize=1024m"
+        - name: PLAY_CRYPTO
+          valueFrom:
+            secretKeyRef:
+              name: daf-secret
+              key: play_crypto
+        - name: MONGO_USER_PWD
+          valueFrom:
+            secretKeyRef:
+              name: daf-secret
+              key: mongo_user_pwd
+        - name: PAC4J_CRYPTO
+          valueFrom:
+            secretKeyRef:
+              name: daf-secret
+              key: pac4j_crypto
+        - name: LDAP_USER_PWD
+          valueFrom:
+            secretKeyRef:
+              name: daf-secret
+              key: ldap_user_pwd
+        - name: CKAN_ADMIN_PWD
+          valueFrom:
+            secretKeyRef:
+              name: daf-secret
+              key: ckan_admin_pwd
+        - name: KYLO_USER_PWD
+          valueFrom:
+            secretKeyRef:
+              name: daf-secret
+              key: kylo_user_pwd
+        imagePullPolicy: Always
+        #lifecycle:
+        #  postStart:
+        #    exec:
+        #     command: ["/bin/sh", "-c", "cat /etc/extra_hosts >> /etc/hosts"]
+        ports:
+        - name: client
+          containerPort: 9000
+        securityContext:
+          privileged: true
+          runAsUser: 0
+        volumeMounts:
+        - name: config-volume
+          mountPath: /opt/docker/conf/mnt
+        - name: catalog-manager-logback-volume
+          mountPath: /opt/docker/conf/logback.xml
+          subPath: logback.xml
+#        - name: glusterfsvol
+#          mountPath: /opt/docker/logs
+#          subPath: catalog-manager/logs
+        - name: hosts
+          mountPath: /etc/extra_hosts
+        - name: krb5conf
+          mountPath: /etc/krb5.conf
+#        - name: hadoopconf
+#          mountPath: /etc/hadoop/conf
+#          readOnly: true
+      imagePullSecrets:
+        - name: regsecret
+      volumes:
+      - name: catalog-manager-logback-volume
+        configMap:
+          name: catalog-manager-logback
+      - name: config-volume
+        configMap:
+          name: catalog-manager-conf
+#      - name: glusterfsvol
+#        persistentVolumeClaim:
+#          claimName: gluster-claim
+      - name: hosts
+        hostPath:
+          path: /etc/hosts
+      - name: krb5conf
+        hostPath:
+          path: /etc/krb5.conf
+#      - name: hadoopconf
+#        hostPath:
+#          path: /etc/hadoop/conf
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: "nifi"
+                  operator: NotIn
+                  values: ["true"]
