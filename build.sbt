@@ -9,14 +9,12 @@ organization in ThisBuild := "it.gov.daf"
 
 name := "daf-catalog-manager"
 
-val isStaging = System.getProperty("STAGING") != null
+val isStaging = sys.env.getOrElse("DEPLOY_ENV", "test") == "test"
+// val isStaging = System.getProperty("STAGING") != null
 
 val playVersion = "2.5.14"
 
 Seq(gitStampSettings: _*)
-
-version in ThisBuild := sys.env.getOrElse("CATALOG_MANAGER_VERSION", "2.0.0-SNAPSHOT")
-
 
 lazy val client = (project in file("client")).
   settings(Seq(
@@ -133,7 +131,8 @@ publishTo in ThisBuild := {
     Some("releases"  at nexus + "maven-releases/")
 }
 
-credentials += {if(isStaging) Credentials(Path.userHome / ".ivy2" / ".credentialsTest") else Credentials(Path.userHome / ".ivy2" / ".credentials")}
+credentials += Credentials { Path.userHome / ".ivy2" / ".credentials" }
+// credentials += {if(isStaging) Credentials(Path.userHome / ".ivy2" / ".credentialsTest") else Credentials(Path.userHome / ".ivy2" / ".credentials")}
 
 javaOptions in Test += "-Dconfig.resource=" + System.getProperty("config.resource", "localConfigs/integration.conf")
 
