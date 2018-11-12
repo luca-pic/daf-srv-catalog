@@ -1,0 +1,7 @@
+object Environment {
+
+  val nexus = "{{ nexus_servicename }}.{{ env_name }}.{{ env_domain }}"
+  val nexusPort = "{{ nexus_registry_port }}"
+  val nexusUrl = s"http://$nexus:$nexusPort/repository/"
+
+}

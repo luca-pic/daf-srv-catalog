@@ -4,13 +4,11 @@ import de.zalando.play.generator.sbt.ApiFirstPlayScalaCodeGenerator.autoImport.p
 import play.sbt.routes.RoutesKeys.routesGenerator
 import sbt.Keys.resolvers
 import uk.gov.hmrc.gitstamp.GitStampPlugin._
+import Environment._
 
 organization in ThisBuild := "it.gov.daf"
 
 name := "daf-catalog-manager"
-
-val isStaging = sys.env.getOrElse("DEPLOY_ENV", "test") == "test"
-// val isStaging = System.getProperty("STAGING") != null
 
 val playVersion = "2.5.14"
 
@@ -80,11 +78,9 @@ resolvers ++= Seq(
   "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
   "jeffmay" at "https://dl.bintray.com/jeffmay/maven",
   Resolver.url("sbt-plugins", url("http://dl.bintray.com/gruggiero/sbt-plugins"))(Resolver.ivyStylePatterns),
-  "lightshed-maven" at "http://dl.bintray.com/content/lightshed/maven"
+  "lightshed-maven" at "http://dl.bintray.com/content/lightshed/maven",
+  "daf repo" at s"$nexusUrl/maven-public/"
 )
-
-resolvers ++= { if(isStaging) Seq("daf repo" at "http://nexus.teamdigitale.test:8081/repository/maven-public/")
-                else Seq("daf repo" at "http://nexus.daf.teamdigitale.it:8081/repository/maven-public/")}
 
 import com.typesafe.sbt.packager.MappingsHelper._
 mappings in Universal ++= directory(baseDirectory.value / "data")
@@ -118,17 +114,15 @@ dockerExposedPorts := Seq(9000)
 
 dockerEntrypoint := {Seq(s"bin/${name.value}", "-Dconfig.file=conf/production.conf")}
 
-dockerRepository := { if(isStaging)Option("nexus.teamdigitale.test") else Option("nexus.daf.teamdigitale.it") }
+dockerRepository := Option(nexus)
 
 
 publishTo in ThisBuild := {
-  val nexus = if(isStaging) "http://nexus.teamdigitale.test:8081/repository/"
-              else "http://nexus.daf.teamdigitale.it:8081/repository/"
 
   if (isSnapshot.value)
-    Some("snapshots" at nexus + "maven-snapshots/")
+    Some("snapshots" at nexusUrl + "maven-snapshots/")
   else
-    Some("releases"  at nexus + "maven-releases/")
+    Some("releases"  at nexusUrl + "maven-releases/")
 }
 
 credentials += Credentials { Path.userHome / ".ivy2" / ".credentials" }

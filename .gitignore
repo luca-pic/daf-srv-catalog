@@ -1,0 +1,6 @@
+/client/target/
+/project/project/
+/project/target/
+/target/
+/project/Environment.scala
+/kubernetes/daf-catalog-manager.yml

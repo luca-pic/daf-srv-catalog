@@ -1,12 +1,25 @@
 pipeline {
     agent none
     stages {
-        stage('Compile test') {
-            when { branch 'test' }
+        stage('Fill templates test') {
+            when { branch 'dev' }
             agent { label 'Master' }
-            environment {
-                DEPLOY_ENV = 'test'
+                steps {
+                slackSend (message: "BUILD START: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' CHECK THE RESULT ON: https://cd.daf.teamdigitale.it/blue/organization/jenkins/daf-srv-storage/activity")
+                sh 'ansible-playbook ansible/main.yml --extra-vars "@/ansible/settings.yml"'
             }
+        }
+        stage('Fill templates prod') {
+            when { branch 'master' }
+            agent { label 'prod' }
+                steps {
+                slackSend (message: "BUILD START: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' CHECK THE RESULT ON: https://cd.daf.teamdigitale.it/blue/organization/jenkins/daf-srv-storage/activity")
+                sh 'ansible-playbook ansible/main.yml --extra-vars "@/ansible/settings.yml"'
+            }
+        }
+        stage('Compile test') {
+            when { branch 'dev' }
+            agent { label 'Master' }
             steps {
                 slackSend (message: "BUILD START: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' CHECK THE RESULT ON: https://cd.daf.teamdigitale.it/blue/organizations/jenkins/daf-srv-catalog/activity")
                 sh 'sbt clean compile'
@@ -16,9 +29,6 @@ pipeline {
         stage('Compile prod') {
             when { branch 'master'}
             agent { label 'prod' }
-            environment {
-                DEPLOY_ENV = 'prod'
-            }
             steps {
                 slackSend (message: "BUILD START: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' CHECK THE RESULT ON: https://cd.daf.teamdigitale.it/blue/organizations/jenkins/daf-srv-catalog/activity")
                 sh 'sbt clean compile'
@@ -26,11 +36,8 @@ pipeline {
 
         }
         stage('Publish test') {
-            when { branch 'test' }
+            when { branch 'dev' }
             agent { label 'Master' }
-            environment {
-                DEPLOY_ENV = 'test'
-            }
             steps {
                 sh 'sbt docker:publish'
             }
@@ -38,15 +45,12 @@ pipeline {
         stage('Publish prod') {
             when { branch 'master'}
             agent { label 'prod' }
-            environment {
-                DEPLOY_ENV = 'prod'
-            }
             steps {
                 sh 'sbt docker:publish'
             }
         }
         stage('Deploy test') {
-            when { branch 'test' }
+            when { branch 'dev' }
             agent { label 'Master' }
             environment {
                 DEPLOY_ENV = 'test'
