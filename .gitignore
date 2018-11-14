@@ -4,3 +4,5 @@
 /target/
 /project/Environment.scala
 /kubernetes/daf-catalog-manager.yml
+/.idea/
+/localConfigs/*
