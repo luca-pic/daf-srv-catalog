@@ -56,7 +56,7 @@ import it.gov.daf.common.utils.RequestContext
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                            
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -211,6 +211,14 @@ package catalog_manager.yaml {
                 }
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.searchdataset
+        }
+        val getDatasetStandardFields = getDatasetStandardFieldsAction {  _ =>  
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.getDatasetStandardFields
+            RequestContext.execInContext[Future[GetDatasetStandardFieldsType[T] forSome { type T }]]("getDatasetStandardFields") { () =>
+              val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
+              GetDatasetStandardFields200(ServiceRegistry.catalogService.getDatasetStandardFields(credentials.username, credentials.groups.toList))
+            }
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.getDatasetStandardFields
         }
         val getckanorganizationbyid = getckanorganizationbyidAction { (org_id: String) =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.getckanorganizationbyid

@@ -125,4 +125,8 @@ class CatalogRepositoryDev extends CatalogRepository{
   def deleteCatalogByName(nameCatalog: String, user: String, token: String, isAdmin: Boolean, wsClient: WSClient): Future[Either[Error, Success]] = {
     Future.successful(Right(Success("delete", None)))
   }
+
+  def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetStandardFields]] = {
+    Future.successful(Seq[DatasetStandardFields]())
+  }
 }
