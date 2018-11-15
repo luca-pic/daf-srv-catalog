@@ -21,7 +21,6 @@ pipeline {
             when { branch 'dev' }
             agent { label 'Master' }
             steps {
-                slackSend (message: "BUILD START: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' CHECK THE RESULT ON: https://cd.daf.teamdigitale.it/blue/organizations/jenkins/daf-srv-catalog/activity")
                 sh 'sbt clean compile'
             }
 
@@ -30,10 +29,8 @@ pipeline {
             when { branch 'master'}
             agent { label 'prod' }
             steps {
-                slackSend (message: "BUILD START: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' CHECK THE RESULT ON: https://cd.daf.teamdigitale.it/blue/organizations/jenkins/daf-srv-catalog/activity")
                 sh 'sbt clean compile'
             }
-
         }
         stage('Publish test') {
             when { branch 'dev' }

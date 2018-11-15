@@ -22,6 +22,7 @@ trait CatalogRepository {
     def standardUris() : List[String]
     def isDatasetOnCatalog(name :String): Option[Boolean]
     def deleteCatalogByName(nameCatalog: String, user: String, token: String, isAdmin: Boolean, wsClient: WSClient): Future[Either[Error, Success]]
+    def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetStandardFields]]
 
 
     // DO NOT DELETE

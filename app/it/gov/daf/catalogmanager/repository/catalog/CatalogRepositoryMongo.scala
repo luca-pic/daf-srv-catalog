@@ -1,6 +1,6 @@
 package it.gov.daf.catalogmanager.repository.catalog
 
-import catalog_manager.yaml.{Dataset, Error, MetaCatalog, MetadataCat, ResponseWrites, Success}
+import catalog_manager.yaml.{Dataset, DatasetStandardFields, Error, Field, MetaCatalog, MetadataCat, ResponseWrites, Success}
 import com.mongodb
 import com.mongodb.DBObject
 import com.mongodb.casbah.MongoClient
@@ -291,6 +291,28 @@ class CatalogRepositoryMongo extends  CatalogRepository{
       case Some(_) => Some(true)
       case None => None
     }
+  }
+
+  def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetStandardFields]] = {
+    import mongodb.casbah.query.Imports._
+
+    val query = $and(
+      $or(MongoDBObject("dcatapit.author" -> user), "operational.acl.groupName" $in groups),
+      MongoDBObject("operational.is_std" -> true)
+    )
+    val mongoClient = MongoClient(server, List(credentials))
+    val db = mongoClient(source)
+    val coll = db("catalog_test")
+    val results = coll.find(query).toList
+    mongoClient.close
+    val jsonString = com.mongodb.util.JSON.serialize(results)
+    val json = Json.parse(jsonString)
+    val metaCatalogJs = json.validate[Seq[MetaCatalog]]
+    val metaCatalog = metaCatalogJs match {
+      case s: JsSuccess[Seq[MetaCatalog]] => s.get
+      case e: JsError => Seq()
+    }
+    Future.successful(metaCatalog.map{catalog => DatasetStandardFields(catalog.dcatapit.name, catalog.dataschema.avro.fields.get.map(f => f.name))})
   }
 
 
