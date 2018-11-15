@@ -5,4 +5,5 @@
 /project/Environment.scala
 /kubernetes/daf-catalog-manager.yml
 /.idea/
+/logs/
 localConfigs/*

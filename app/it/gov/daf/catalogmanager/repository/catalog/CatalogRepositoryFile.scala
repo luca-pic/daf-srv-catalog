@@ -294,4 +294,7 @@
       Future.successful(Right(Success("delete", None)))
     }
 
+    def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetStandardFields]] = {
+      Future.successful(Seq[DatasetStandardFields]())
+    }
   }
