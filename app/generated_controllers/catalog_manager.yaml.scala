@@ -48,6 +48,8 @@ import scala.concurrent.Await
 import yaml.ResponseWrites.MetaCatalogWrites.writes
 import play.api.mvc.Headers
 import it.gov.daf.common.utils.RequestContext
+import java.lang
+import akka.stream.ConnectionException
 
 /**
  * This controller is re-generated after each change in the specification.
@@ -171,7 +173,6 @@ package catalog_manager.yaml {
                 val user = CredentialManager.readCredentialFromRequest(currentRequest).username
 
                 val feedName = s"$org.${org}_o_$name"
-
 
                 val token = readTokenFromRequest(currentRequest.headers, true)
 
