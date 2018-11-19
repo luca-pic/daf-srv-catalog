@@ -55,7 +55,9 @@ import it.gov.daf.common.utils.RequestContext
  */
 
 package catalog_manager.yaml {
-    // ----- Start of unmanaged code area for package Catalog_managerYaml
+
+  import scala.language.postfixOps
+  // ----- Start of unmanaged code area for package Catalog_managerYaml
                                                                                                                                                                                                                                                                                                                                                                                         
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
@@ -224,7 +226,12 @@ package catalog_manager.yaml {
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.getDatasetStandardFields
             RequestContext.execInContext[Future[GetDatasetStandardFieldsType[T] forSome { type T }]]("getDatasetStandardFields") { () =>
               val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
-              GetDatasetStandardFields200(ServiceRegistry.catalogService.getDatasetStandardFields(credentials.username, credentials.groups.toList))
+              val response: Future[Seq[DatasetStandardFields]] = ServiceRegistry.catalogService.getDatasetStandardFields(credentials.username, credentials.groups.toList)
+              response onComplete { seq =>
+                if(seq.getOrElse(Seq[DatasetStandardFields]()).isEmpty) logger.debug("nof found dataset standard fields for")
+                else logger.debug(s"found ${seq.get.size} dataset standard")
+              }
+              GetDatasetStandardFields200(response)
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.getDatasetStandardFields
         }
