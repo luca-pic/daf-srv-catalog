@@ -56,7 +56,6 @@ import it.gov.daf.common.utils.RequestContext
 
 package catalog_manager.yaml {
 
-  import scala.language.postfixOps
   // ----- Start of unmanaged code area for package Catalog_managerYaml
                                                                                                                                                                                                                                                                                                                                                                                         
     // ----- End of unmanaged code area for package Catalog_managerYaml
