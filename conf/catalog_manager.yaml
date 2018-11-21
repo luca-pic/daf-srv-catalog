@@ -415,6 +415,25 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
+  "/catalog-ds/tags":
+    get:
+      tags:
+      - DatasetCatalog
+      description: return all tags
+      operationId: getTags
+      produces:
+      - application/json
+      responses:
+        200:
+          description: set of tags
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
   "/kafka/notifications/add":
     post:
       tags:

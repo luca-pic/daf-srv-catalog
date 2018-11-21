@@ -1,15 +1,19 @@
 package it.gov.daf.catalogmanager.repository.catalog
 
-import catalog_manager.yaml.{Dataset, DatasetStandardFields, Error, Field, MetaCatalog, MetadataCat, ResponseWrites, Success}
+import catalog_manager.yaml.{Dataset, DatasetStandardFields, Error, MetaCatalog, MetadataCat, ResponseWrites, Success}
 import com.mongodb
 import com.mongodb.DBObject
 import com.mongodb.casbah.MongoClient
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import com.mongodb.casbah.Imports._
-import it.gov.daf.catalogmanager.service.CkanRegistry
+import com.sksamuel.elastic4s.http.ElasticDsl.{search, termsAgg}
 import it.gov.daf.catalogmanager.utilities.{CatalogManager, ConfigReader}
 import play.api.libs.ws.WSClient
 import play.api.Logger
+import com.sksamuel.elastic4s.http.search.SearchResponse
+import com.sksamuel.elastic4s.ElasticsearchClientUri
+import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.http.HttpClient
 
 import scala.concurrent.Future
 
@@ -25,6 +29,9 @@ class CatalogRepositoryMongo extends  CatalogRepository{
   private val userName = ConfigReader.userName
   private val source = ConfigReader.database
   private val password = ConfigReader.password
+
+  private val elasticsearchUrl = ConfigReader.getElasticsearchUrl
+  private val elasticsearchPort = ConfigReader.getElasticsearchPort
 
   private val DATIPUBBLICI_HOST = ConfigReader.datipubbliciHost
 
@@ -333,6 +340,38 @@ class CatalogRepositoryMongo extends  CatalogRepository{
       case e: JsError => Seq()
     }
     Future.successful(metaCatalog.map{catalog => DatasetStandardFields(catalog.dcatapit.name, catalog.dataschema.avro.fields.get.map(f => f.name))})
+  }
+
+  def getTag: Future[Seq[String]] = {
+    import scala.concurrent.ExecutionContext.Implicits._
+
+    Logger.logger.debug(s"elasticsearchUrl: $elasticsearchUrl elasticsearchPort: $elasticsearchPort")
+
+    val client = HttpClient(ElasticsearchClientUri(elasticsearchUrl, elasticsearchPort))
+    val index = "ckan"
+    val searchType = "catalog_test"
+    val fieldsTags = "dataschema.flatSchema.metadata.tag.keyword"
+    val datasetTags = "dcatapit.tags.name.keyword"
+
+    val query = search(index).types(searchType)
+      .fetchSource(false)
+      .aggregations(
+        termsAgg("tagDatasets", datasetTags), termsAgg("tagFields", fieldsTags)
+      )
+
+    val searchResponse: Future[SearchResponse] = client.execute(query)
+
+    val response: Future[Seq[String]] = searchResponse.map{ res =>
+      res.aggregations.flatMap{aggr =>
+        aggr._2.asInstanceOf[Map[String, Int]]("buckets").asInstanceOf[List[Map[String, AnyVal]]].map(elem => elem("key").asInstanceOf[String])
+      }.toSeq.distinct
+    }
+
+    response onComplete {
+      res => Logger.debug(s"found ${res.getOrElse(Seq("no_tags")).size} tags")
+    }
+
+    response
   }
 
 
