@@ -131,4 +131,6 @@ class CatalogRepositoryDev extends CatalogRepository{
   def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetStandardFields]] = {
     Future.successful(Seq[DatasetStandardFields]())
   }
+
+  def getTag: Future[Seq[String]] = Future.successful(Seq[String]())
 }

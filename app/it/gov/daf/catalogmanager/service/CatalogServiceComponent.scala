@@ -61,5 +61,9 @@ trait CatalogServiceComponent {
       catalogRepository.getDatasetStandardFields(user, groups)
     }
 
+    def getTag: Future[Seq[String]] = {
+      catalogRepository.getTag
+    }
+
   }
 }

@@ -58,7 +58,7 @@ import akka.stream.ConnectionException
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-                                                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                                                
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -225,7 +225,12 @@ package catalog_manager.yaml {
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.getDatasetStandardFields
             RequestContext.execInContext[Future[GetDatasetStandardFieldsType[T] forSome { type T }]]("getDatasetStandardFields") { () =>
               val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
-              GetDatasetStandardFields200(ServiceRegistry.catalogService.getDatasetStandardFields(credentials.username, credentials.groups.toList))
+              val response: Future[Seq[DatasetStandardFields]] = ServiceRegistry.catalogService.getDatasetStandardFields(credentials.username, credentials.groups.toList)
+              response onComplete { seq =>
+                if(seq.getOrElse(Seq[DatasetStandardFields]()).isEmpty) logger.debug("nof found dataset standard fields for")
+                else logger.debug(s"found ${seq.get.size} dataset standard")
+              }
+              GetDatasetStandardFields200(response)
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.getDatasetStandardFields
         }
@@ -260,6 +265,14 @@ package catalog_manager.yaml {
                     CreatedatasetcatalogExtOpenData401("authentication required")
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.createdatasetcatalogExtOpenData
+        }
+        val getTags = getTagsAction {  _ =>  
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.getTags
+          RequestContext.execInContext[Future[GetTagsType[T] forSome { type T }]]("getTags") { () =>
+            GetTags200(ServiceRegistry.catalogService.getTag)
+          }
+//            NotImplementedYet
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.getTags
         }
         val getckandatasetList = getckandatasetListAction {  _ =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.getckandatasetList
