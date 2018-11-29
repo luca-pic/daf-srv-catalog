@@ -55,7 +55,7 @@ libraryDependencies ++= Seq(
   "com.sksamuel.avro4s" %% "avro4s-generator" % "1.1.3",
   //elastic
   "com.sksamuel.elastic4s" %% "elastic4s-http" % "5.6.4",
-  "org.elasticsearch.client" % "elasticsearch-rest-client" % "6.2.2",
+  "org.elasticsearch.client" % "elasticsearch-rest-client" % "6.2.2"
 
 
   //"com.github.cb372" %% "scalacache-guava" % "0.9.4"
