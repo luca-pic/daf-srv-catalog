@@ -1,6 +1,6 @@
 package it.gov.daf.catalogmanager.repository.catalog
 
-import catalog_manager.yaml.{Dataset, DatasetStandardFields, Error, MetaCatalog, MetadataCat, ResponseWrites, Success}
+import catalog_manager.yaml.{Dataset, DatasetNameFields, Error, MetaCatalog, MetadataCat, ResponseWrites, Success}
 import com.mongodb
 import com.mongodb.DBObject
 import com.mongodb.casbah.MongoClient
@@ -14,6 +14,7 @@ import com.sksamuel.elastic4s.http.search.SearchResponse
 import com.sksamuel.elastic4s.ElasticsearchClientUri
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.http.HttpClient
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future
 
@@ -214,7 +215,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
           val obj = com.mongodb.util.JSON.parse(json.toString()).asInstanceOf[DBObject]
           val inserted = coll.insert(obj)
           mongoClient.close()
-          val msg = meta.operational.logical_uri
+          val msg = meta.operational.logical_uri.getOrElse("")
           msg
         case _ =>
           println("Error");
@@ -231,7 +232,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
           val json: JsValue = MetaCatalogWrites.writes(meta)
           val obj = com.mongodb.util.JSON.parse(json.toString()).asInstanceOf[DBObject]
           val inserted = coll.insert(obj)
-          val msg = meta.operational.logical_uri
+          val msg = meta.operational.logical_uri.getOrElse("")
           msg
         case _ =>
           println("Error");
@@ -274,7 +275,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
           val obj = com.mongodb.util.JSON.parse(json.toString()).asInstanceOf[DBObject]
           val inserted = coll.insert(obj)
           mongoClient.close()
-          val msg = meta.operational.logical_uri
+          val msg = meta.operational.logical_uri.getOrElse("")
           msg
         case _ =>
           println("Error");
@@ -286,12 +287,12 @@ class CatalogRepositoryMongo extends  CatalogRepository{
       val random = scala.util.Random
       val id = random.nextInt(1000).toString
       val res: Option[MetaCatalog]= (CatalogManager.writeOrdAndStd(metaCatalog))
-      val message = res match {
+      val message: String = res match {
         case Some(meta) =>
           val json: JsValue = MetaCatalogWrites.writes(meta)
           val obj = com.mongodb.util.JSON.parse(json.toString()).asInstanceOf[DBObject]
           val inserted = coll.insert(obj)
-          val msg = meta.operational.logical_uri
+          val msg = meta.operational.logical_uri.getOrElse("")
           msg
         case _ =>
           println("Error");
@@ -320,7 +321,23 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     }
   }
 
-  def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetStandardFields]] = {
+  def getFieldsVoc: Future[Seq[DatasetNameFields]] = {
+    val mongoClient = MongoClient(server, List(credentials))
+    val db = mongoClient(source)
+    val coll = db("catalog_test")
+    val result = coll.find(MongoDBObject("operational.is_vocabulary" -> true)).toList
+    mongoClient.close()
+    val jsonString = com.mongodb.util.JSON.serialize(result)
+    val json = Json.parse(jsonString)
+    val metaCatalogJs = json.validate[Seq[MetaCatalog]]
+    val metaCatalog: Seq[MetaCatalog] = metaCatalogJs match {
+      case s: JsSuccess[Seq[MetaCatalog]] => s.get
+      case e: JsError => Seq()
+    }
+    Future.successful(metaCatalog.map{catalog => DatasetNameFields(catalog.dcatapit.name, catalog.dataschema.avro.fields.get.map(f => f.name))})
+  }
+
+  def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetNameFields]] = {
     import mongodb.casbah.query.Imports._
 
     val query = $and(
@@ -339,7 +356,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
       case s: JsSuccess[Seq[MetaCatalog]] => s.get
       case e: JsError => Seq()
     }
-    Future.successful(metaCatalog.map{catalog => DatasetStandardFields(catalog.dcatapit.name, catalog.dataschema.avro.fields.get.map(f => f.name))})
+    Future.successful(metaCatalog.map{catalog => DatasetNameFields(catalog.dcatapit.name, catalog.dataschema.avro.fields.get.map(f => f.name))})
   }
 
   def getTag: Future[Seq[String]] = {
