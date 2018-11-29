@@ -56,8 +56,6 @@ libraryDependencies ++= Seq(
   //elastic
   "com.sksamuel.elastic4s" %% "elastic4s-http" % "5.6.4",
   "org.elasticsearch.client" % "elasticsearch-rest-client" % "6.2.2",
-  //redis
-  "net.debasishg" %% "redisclient" % "3.8"
 
 
   //"com.github.cb372" %% "scalacache-guava" % "0.9.4"
