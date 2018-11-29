@@ -50,7 +50,6 @@ import play.api.mvc.Headers
 import it.gov.daf.common.utils.RequestContext
 import java.lang
 import akka.stream.ConnectionException
-import it.gov.daf.catalogmanager.repository.catalog.CatalogRepository
 
 /**
  * This controller is re-generated after each change in the specification.
