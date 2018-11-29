@@ -211,7 +211,7 @@
                 val data = Json.toJson(meta)
                 fw.write(Json.stringify(data) + "\n")
                 fw.close()
-                val msg = meta.operational.logical_uri
+                val msg = meta.operational.logical_uri.getOrElse("")
                 msg
               case _ =>
                 val msg = "Error"
@@ -224,7 +224,7 @@
                 val data = Json.toJson(meta)
                 fw.write(Json.stringify(data) + "\n")
                 fw.close()
-                val msg = meta.operational.logical_uri
+                val msg = meta.operational.logical_uri.getOrElse("")
                 msg
               case _ =>
                 val msg = "Error"
@@ -256,7 +256,7 @@
                 val data = Json.toJson(meta)
                 fw.write(Json.stringify(data) + "\n")
                 fw.close()
-                val msg = meta.operational.logical_uri
+                val msg = meta.operational.logical_uri.getOrElse("")
                 msg
               case _ =>
                 val msg = "Error"
@@ -269,7 +269,7 @@
                 val data = Json.toJson(meta)
                 fw.write(Json.stringify(data) + "\n")
                 fw.close()
-                val msg = meta.operational.logical_uri
+                val msg = meta.operational.logical_uri.getOrElse("")
                 msg
               case _ =>
                 val msg = "Error"
@@ -296,9 +296,11 @@
 
     override def internalCatalogByName(name: String): Option[MetaCatalog] = None
 
-    def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetStandardFields]] = {
-      Future.successful(Seq[DatasetStandardFields]())
+    def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetNameFields]] = {
+      Future.successful(Seq[DatasetNameFields]())
     }
 
     def getTag: Future[Seq[String]] = Future.successful(Seq[String]())
+
+    def getFieldsVoc: Future[Seq[DatasetNameFields]] = Future.successful(Seq[DatasetNameFields]())
   }

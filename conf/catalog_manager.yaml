@@ -304,7 +304,7 @@ paths:
         description: Dataset Catalog
         required: true
         schema:
-          $ref: '#/definitions/MetaCatalog'
+          $ref: '#/definitions/StringToKafka'
       responses:
         200:
           description: Success
@@ -406,11 +406,11 @@ paths:
       - application/json
       responses:
         200:
-          description: set of DatasetStandardFields object
+          description: set of DatasetNameFields object
           schema:
             type: array
             items:
-              $ref: '#/definitions/DatasetStandardFields'
+              $ref: '#/definitions/DatasetNameFields'
         default:
           description: Unexpected error
           schema:
@@ -1042,6 +1042,23 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
+  "/voc/fields/getall":
+    get:
+      descritpion: Get fields of all vocabulary
+      operationId: getFieldsVoc
+      tags:
+        - Vocabulary
+      responses:
+        200:
+          description: list of DatasetNameFields
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/DatasetNameFields'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
   "/voc/themes/getall/":
     get:
       summary: Get the list of all DAF themes
@@ -1383,6 +1400,19 @@ definitions:
         type: string
       value:
         type: string
+  KeyValueArray:
+      type: object
+      required:
+        - key
+        - value
+      description: Generic Key/Value pair object, where value is an array for more generic usage
+      properties:
+        key:
+          type: string
+        value:
+          type: array
+          items:
+            type: string
 
   VocKeyValueSubtheme:
       type: object
@@ -1447,6 +1477,9 @@ definitions:
       - avro
       - flatSchema
      properties:
+      encoding:
+        type: string
+        description: the encoding for the dataset. It may be null, in which case DAF will try to infer it.
       avro:
         $ref: '#/definitions/Avro'
       flatSchema:
@@ -1480,6 +1513,10 @@ definitions:
         #  type: array
         #  items:
         #    type: string
+        separator:
+          type: string
+        property_hierarchy:
+          type: string
         fields:
           type: array
           items:
@@ -1510,7 +1547,7 @@ definitions:
       metadata:
         $ref: '#/definitions/Metadata'
         description: JSON object containing metadata information for the field
-  DatasetStandardFields:
+  DatasetNameFields:
     required:
       - name
       - fields
@@ -1533,6 +1570,10 @@ definitions:
      #   $ref: '#/definitions/Lang'
      # metadata_format:
      #   type: string
+      type:
+         type: string
+      key:
+        type: boolean
       title:
         type: string
         description: Human readable name or title for the column.
@@ -1541,7 +1582,7 @@ definitions:
         description: Description of the content of the column.
       field_type:
         type: string
-        description: It specifies if the field is a dimension, a metric (numeric attribute) or a descriptive attribute.
+        description: It specifies if the field is a dimension ('dim'), a metric (numeric attribute, 'metric') or a descriptive attribute ('desc').
       required:
         type: integer
         description: It specifies if the field must be valorized or can be null.
@@ -1555,7 +1596,6 @@ definitions:
       is_updatedate:
         type: boolean
         description: checked if the column contains the date when the row was updated.
-
       #desc_lang:
       #  $ref: '#/definitions/Lang'
       cat:
@@ -1633,6 +1673,9 @@ definitions:
         description: it is of type array, and it gives info about the hierarchy, if any, to which the property/column belongs to.
         items:
           type: string
+      field_group:
+        type: string
+        description: a unique ID linking together columns relating to the same aspect. In the future, this may be controlled or semi-controlled by the semantic context.
   Constr:
     type: object
     properties:
@@ -1659,26 +1702,35 @@ definitions:
    #     description: Uri of the simple predicate
   Personal:
     type: object
-    required:
-      - ispersonal
     properties:
-      ispersonal:
+      is_personal:
         type: boolean
         description: It tells if the column contains personal information.
       cat:
         type: string
         description: It contains the type of personal data
+      processing:
+        type: string
+      is_analysis:
+        type: boolean
   FormatStd:
     type: object
-    required:
-      - name
     properties:
       name:
         type: string
         description: Name of the standard format used
       param:
-        type: string
+        type: array
         description: It contains parameters needed (if needed) by the specific type of FormatStd.
+        items:
+          $ref: '#/definitions/KeyValue'
+      conv:
+        type: array
+        description: It contains name and properties of
+        items:
+          $ref: '#/definitions/KeyValueArray'
+
+
   FieldProfile:
     type: object
     properties:
@@ -1698,9 +1750,28 @@ definitions:
         description: contains info on the standardization procedure to be performed on the field (Kylo Standardization).
         items: 
           type: string
+      entity_extr:
+        type: array
+        description: contains the list of entity extraction procedures to be applied to the field.
+        items:
+          $ref: '#/definitions/EntityExtraction'
+
+  EntityExtraction:
+    type: object
+    required:
+      - name
+    properties:
+      name:
+        type: string
+        description: Name of the entity extraction mechanism.
+      param:
+        type: array
+        description: Key/Value pairs list of Name/Value parameters of the selected entity extraction procedure.
+        items:
+          $ref: '#/definitions/KeyValue'
+
   Operational:
     required:
-      - logical_uri
       - is_std
       - group_own
       - read_type
@@ -1728,9 +1799,11 @@ definitions:
       is_std:
         type: boolean
         description: It tells if the dataset is a Standart Schema dataset (or VID). It takes values true (StdSchema Dataset), false (not a StdSchema Dataset)
+      is_vocabulary:
+        type: boolean
       group_own:
         type: string
-        description: Group of ownership to which the dataset belongs. It is set to 'open' by default.
+        description: Group of ownership to which the dataset belongs. It is set to the same group to which the user belongs to by default.
       group_access:
         type: array
         description: Groups that have rights to access the datasets. It contains the name and the role associated to the group
@@ -1754,21 +1827,22 @@ definitions:
         type: array
         description: List of ingestion pipeline to be applied, in order of declaration, to the data to be ingested.
         items:
-          type: string
+          $ref: '#/definitions/IngestionPipeline'
       storage_info:
         description: Information on the storage to be used to save the dataset.
         type: object
         $ref: '#/definitions/StorageInfo'
       dataset_type:
         type: string
-        description: It tells whether the dataset is at rest ('batch') or realtime stream ('stream') and, orthogonally, if it is of type 'opendata' (from  national catalogue), in which case it will have a suffix '_opendata'.
+        description: --DEPRECATED, use dataset_proc.dataset_type instead-- It tells whether the dataset is at rest ('batch') or realtime stream ('stream') and, orthogonally, if it is of type 'opendata' (from  national catalogue), in which case it will have a suffix '_opendata'.
       file_type:
         type: string
         description: It tells wheter the dataset is a json or a csv file
       partitions:
-        type: object
+        type: array
         description: it tells if the dataset is partitioned, and what the partitions are.
-        $ref: '#/definitions/Partitions'
+        items:
+          $ref: '#/definitions/Partitions'
       dataset_proc:
         type: object
         description: It has info about how to process and store internally the dataset. Such info includes partitioning, merge strategy, etc.
@@ -1782,7 +1856,16 @@ definitions:
         description: Info about dataset visibility
         items:
           $ref: '#/definitions/Acl'
-
+  IngestionPipeline:
+    type: object
+    description: Object describing the properties of an ingestion pipeline
+    properties:
+      name:
+        type: string
+        description: name of the ingestion pipe
+      param:
+        type: string
+        description: parameters for the ingestion pipe in JSON format.
   ExtOpenData:
     type: object
     description: Type associated with group_access
@@ -1931,6 +2014,9 @@ definitions:
       sql:
         type: string
         description: Sql statement to create the derived dataset based on the ones indicated in 'dataset_uri'.
+      procedure:
+        type: string
+        description: id of the procedure to be applied to build and update the dataset
       param:
         type: string
         description: Other parameters to be passed in JSON format. It will be None by default.
@@ -2070,15 +2156,18 @@ definitions:
         type: string
         description: It tells whether the dataset is an append of snapshot ('last_update') or a time series ('time_series') and tells the program how to return the data. It should be an enum, to be changed when we upgrade to OpenApi 3.
       partitions:
-        type: object
+        type: array
         description: Info on how dataset are partitioned into HDFS.
-        $ref: '#/definitions/Partitions'
+        items:
+          $ref: '#/definitions/Partitions'
       merge_strategy:
         type: string
         description: It tells how new data should be ingested into the existing dataset. User must choose among the following options. 'SYNC' to replace the existing content with the new one; 'MERGE' to append the data into the target partitions; 'DEDUPE_AND_MERGE' to insert into the target partition but ensure no duplicate rows are remaining; 'PK_MERGE' to insert or update existing rows matching the  same primary key; 'ROLLING_SYNC' to overwrite target partitions only when present in source.
       cron:
         type: string
         description:  It tells the shedule frequency of feed to start
+      scheduling_strategy:
+        type: string
 
   GeoRef:
     type: object
@@ -2169,7 +2258,6 @@ definitions:
       #- identifier
       #- modified
       - name
-      - notes
       #- publisher_identifier
       #- publisher_name
       #- theme
@@ -2466,4 +2554,11 @@ definitions:
       username:
         type: string
       password:
+        type: string
+  StringToKafka:
+    type: object
+    required:
+    - catalog
+    properties:
+      catalog:
         type: string

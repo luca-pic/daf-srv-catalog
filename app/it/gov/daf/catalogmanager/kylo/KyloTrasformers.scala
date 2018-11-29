@@ -92,9 +92,9 @@ object KyloTrasformers {
          (((__ \ 'table) \ 'sourceTableSchema) \ 'fields).json.put((inferJson \ "fields").as[JsArray]) and
          (((__ \ 'table) \ 'feedTableSchema) \ 'fields).json.put((inferJson \ "fields").as[JsArray]) and
          ((__ \ 'table) \ 'feedFormat).json.put(JsString((inferJson \ "hiveFormat").as[String])) and
-         ((__ \ 'table) \ 'targetMergeStrategy).json.put(JsString(metaCatalog.operational.dataset_proc.get.merge_strategy)) and
+         ((__ \ 'table) \ 'targetMergeStrategy).json.put(JsString(metaCatalog.operational.dataset_proc.get.merge_strategy.toUpperCase)) and
          ((__ \ 'table) \ 'fieldPolicies).json.put(buildProfiling(inferJson)) and
-         ((__ \ 'schedule) \ 'schedulingStrategy).json.put(JsString("CRON_DRIVEN")) and
+         ((__ \ 'schedule) \ 'schedulingStrategy).json.put(JsString(metaCatalog.operational.dataset_proc.get.scheduling_strategy.get)) and
          ((__ \ 'schedule) \ 'schedulingPeriod).json.put(JsString(metaCatalog.operational.dataset_proc.get.cron)) and
          (__ \ 'category).json.put(Json.obj("id" -> (category \ "id").as[String],
                                       "name" ->  (category \ "name").as[String],

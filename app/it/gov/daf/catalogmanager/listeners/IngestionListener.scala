@@ -51,7 +51,7 @@ class IngestionListenerImpl @Inject() (appLifecycle: ApplicationLifecycle) exten
         val org = x.dcatapit.owner_org.get
         val name = x.dcatapit.identifier//.get //.value.get
         val logicalUri = x.operational.logical_uri
-        IngestionUtils.datasetsNameUri += (name.get -> logicalUri)
+        IngestionUtils.datasetsNameUri += (name.get -> logicalUri.getOrElse(""))
         val orgDir: File = Environment.simple().getFile("data/org/" + org + "/" + name)
         if(!orgDir.exists()) {
           orgDir.mkdirs()

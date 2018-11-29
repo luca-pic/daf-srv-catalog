@@ -66,7 +66,7 @@ object CatalogManager {
           uriDataset <- Try(UriDataset.convertToUriDataset((metaCatalogOrdinary)))
           logicalUri <- Try(uriDataset.getUri())
           physicalUri <- Try(uriDataset.getUrl())
-          operational <- Try(metaCatalogOrdinary.operational.copy(logical_uri = logicalUri, physical_uri = Some(physicalUri)))
+          operational <- Try(metaCatalogOrdinary.operational.copy(logical_uri = Some(logicalUri), physical_uri = Some(physicalUri)))
           newSchema <- Try(metaCatalogOrdinary.copy( operational = operational))
         } yield newSchema
 
@@ -94,7 +94,7 @@ object CatalogManager {
       uriDataset <- Option(UriDataset.convertToUriDataset(metaCatalogOrdinary))
       logicalUri <- Option(uriDataset.getUri())
       physicalUri <- Option(uriDataset.getUrl())
-      operational <- Option(metaCatalogOrdinary.operational.copy(logical_uri = logicalUri, physical_uri = Some(physicalUri)))
+      operational <- Option(metaCatalogOrdinary.operational.copy(logical_uri = Some(logicalUri), physical_uri = Some(physicalUri)))
       newSchema <- Option(metaCatalogOrdinary.copy( operational = operational))
     } yield newSchema
     //savoAsFile(save)
@@ -107,7 +107,7 @@ object CatalogManager {
       uriDataset <- Option(UriDataset.convertToUriDataset(metaCatalogOrdinary))
       logicalUri <- Option(uriDataset.getUri())
       physicalUri <- Option(uriDataset.getUrl())
-      operational <- Option(metaCatalogOrdinary.operational.copy(logical_uri = logicalUri, physical_uri = Some(physicalUri)))
+      operational <- Option(metaCatalogOrdinary.operational.copy(logical_uri = Some(logicalUri), physical_uri = Some(physicalUri)))
       newSchema <- Option(metaCatalogOrdinary.copy( operational = operational))
     } yield newSchema
 
@@ -139,7 +139,7 @@ object CatalogManager {
       uriDataset <- Option(datasetConverter)
       logicalUri <- Option(uriDataset.toLogicalUri)
       physicalUri <- Option(uriDataset.toPhysicalUri())
-      operational <- Option(metaCatalog.operational.copy(logical_uri = logicalUri, physical_uri = Some(physicalUri)))
+      operational <- Option(metaCatalog.operational.copy(logical_uri = Some(logicalUri), physical_uri = Some(physicalUri)))
       newSchema <- Option(metaCatalog.copy( operational = operational))
     } yield newSchema
 
