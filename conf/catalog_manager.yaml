@@ -1856,6 +1856,24 @@ definitions:
         description: Info about dataset visibility
         items:
           $ref: '#/definitions/Acl'
+      type_info:
+        type: object
+        description: it tell if the dataset is derived or primitive
+        $ref: '#/definitions/TypeInfo'
+  TypeInfo:
+    type: object
+    description: Object describing the properties of typology
+    required:
+      - dataset_type
+    properties:
+      dataset_type:
+         type: string
+      sources:
+        type: array
+        items:
+          type: string
+      query:
+        type: string
   IngestionPipeline:
     type: object
     description: Object describing the properties of an ingestion pipeline
