@@ -106,4 +106,11 @@ object KyloTrasformers {
     of[JsArray].map{ case JsArray(arr) => buildUserProperties(arr, metaCatalog, fileType) }
   )
 
+  def feedTrasformationTemplate(metaCatalog: MetaCatalog, template :JsValue, inferJson :JsValue, category :JsValue, fileType :String): Reads[JsObject] = __.json.update(
+    (__ \ 'feedName).json.put(JsString(metaCatalog.dcatapit.holder_identifier.get + "_o_" + metaCatalog.dcatapit.name)) and
+      (__ \ 'systemFeedName).json.put(JsString(metaCatalog.dcatapit.holder_identifier.get + "_o_" + metaCatalog.dcatapit.name))
+      reduce
+  )
+
+
 }

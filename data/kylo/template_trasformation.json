@@ -1,0 +1,673 @@
+{
+  "id": null,
+  "versionName": null,
+  "templateId": "62ce1297-748c-4781-a387-9c2bbf9fe615",
+  "feedName": "{PLACEHOLDER_DAF}",
+  "description": "",
+  "systemFeedName": "{PLACEHOLDER_DAF}",
+  "inputProcessorType": "com.thinkbiganalytics.nifi.v2.metadata.TriggerFeed",
+  "inputProcessorName": "TriggerFeed",
+  "inputProcessor": null,
+  "nonInputProcessors": null,
+  "properties": [],
+  "securityGroups": [],
+  "schedule": {
+    "schedulingPeriod": "0 0 12 1/1 * ? *",
+    "schedulingStrategy": "TRIGGER_DRIVEN",
+    "concurrentTasks": 1,
+    "schedulingStrategyTouched": true,
+    "executionNode": "PRIMARY",
+    "preconditions": [
+      {
+        "name": "Dependent upon Feed(s)",
+        "displayName": "Dependent upon Feed(s)",
+        "description": "Policy will trigger the feed when all of the supplied feeds have successfully finished",
+        "shortDescription": "Policy will trigger the feed when all of the supplied feeds have successfully finished",
+        "properties": [
+          {
+            "name": "Since Feed",
+            "displayName": "Since Feed",
+            "value": "{PLACEHOLDER_DAF--->organizzazione.feedName}",
+            "values": [],
+            "placeholder": "",
+            "type": "currentFeed",
+            "hint": "",
+            "objectProperty": "sinceCategoryAndFeedName",
+            "selectableValues": [],
+            "required": false,
+            "group": "",
+            "groupOrder": 1,
+            "layout": "column",
+            "hidden": true,
+            "pattern": "",
+            "patternInvalidMessage": "Invalid Input",
+            "formKey": "property_3",
+            "invalid": false
+          },
+          {
+            "name": "Dependent Feeds",
+            "displayName": "Dependent Feeds",
+            "value": null,
+            "values": [
+              {
+                "label": "{PLACEHOLDER_DAF--->organizzazione_dipendente.feedNameDipendente}",
+                "value": "{PLACEHOLDER_DAF--->organizzazione_dipendente.feedNameDipendente}",
+                "hint": "",
+                "properties": {
+                  "feed:disabled": false,
+                  "feed:editDetails": true
+                }
+              }
+            ],
+            "placeholder": "Start typing a feed",
+            "type": "feedChips",
+            "hint": "Select feed(s) that this feed is dependent upon",
+            "objectProperty": "categoryAndFeeds",
+            "selectableValues": [],
+            "required": true,
+            "group": "",
+            "groupOrder": 2,
+            "layout": "column",
+            "hidden": false,
+            "pattern": "",
+            "patternInvalidMessage": "Invalid Input",
+            "formKey": "property_4",
+            "invalid": false
+          }
+        ],
+        "objectClassType": "com.thinkbiganalytics.policy.precondition.FeedExecutedSinceFeeds",
+        "objectShortClassType": "FeedExecutedSinceFeeds",
+        "propertyValuesDisplayString": " Dependent Feeds: {PLACEHOLDER_DAF--->organizzazione_dipendente.feedNameDipendente}",
+        "sequence": null,
+        "groups": [
+          {
+            "group": "",
+            "layout": "column",
+            "properties": [
+              {
+                "name": "Since Feed",
+                "displayName": "Since Feed",
+                "value": "{PLACEHOLDER_DAF--->organizzazione.feedName}",
+                "values": [],
+                "placeholder": "",
+                "type": "currentFeed",
+                "hint": "",
+                "objectProperty": "sinceCategoryAndFeedName",
+                "selectableValues": [],
+                "required": false,
+                "group": "",
+                "groupOrder": 1,
+                "layout": "column",
+                "hidden": true,
+                "pattern": "",
+                "patternInvalidMessage": "Invalid Input",
+                "formKey": "property_3",
+                "invalid": false
+              },
+              {
+                "name": "Dependent Feeds",
+                "displayName": "Dependent Feeds",
+                "value": null,
+                "values": [
+                  {
+                    "label": "{PLACEHOLDER_DAF--->organizzazione_prova.indirizzi_agency}",
+                    "value": "{PLACEHOLDER_DAF--->organizzazione_prova.indirizzi_agency}",
+                    "hint": "",
+                    "properties": {
+                      "feed:disabled": false,
+                      "feed:editDetails": true
+                    }
+                  }
+                ],
+                "placeholder": "Start typing a feed",
+                "type": "feedChips",
+                "hint": "Select feed(s) that this feed is dependent upon",
+                "objectProperty": "categoryAndFeeds",
+                "selectableValues": [],
+                "required": true,
+                "group": "",
+                "groupOrder": 2,
+                "layout": "column",
+                "hidden": false,
+                "pattern": "",
+                "patternInvalidMessage": "Invalid Input",
+                "formKey": "property_4",
+                "invalid": false
+              }
+            ]
+          }
+        ],
+        "editable": true,
+        "ruleType": {
+          "name": "Dependent upon Feed(s)",
+          "displayName": "Dependent upon Feed(s)",
+          "description": "Policy will trigger the feed when all of the supplied feeds have successfully finished",
+          "shortDescription": "Policy will trigger the feed when all of the supplied feeds have successfully finished",
+          "properties": [
+            {
+              "name": "Since Feed",
+              "displayName": "Since Feed",
+              "value": "{PLACEHOLDER_DAF--->organizzazione.feedName}",
+              "values": [],
+              "placeholder": "",
+              "type": "currentFeed",
+              "hint": "",
+              "objectProperty": "sinceCategoryAndFeedName",
+              "selectableValues": [],
+              "required": false,
+              "group": "",
+              "groupOrder": 1,
+              "layout": "column",
+              "hidden": true,
+              "pattern": "",
+              "patternInvalidMessage": "Invalid Input"
+            },
+            {
+              "name": "Dependent Feeds",
+              "displayName": "Dependent Feeds",
+              "value": null,
+              "values": [],
+              "placeholder": "Start typing a feed",
+              "type": "feedChips",
+              "hint": "Select feed(s) that this feed is dependent upon",
+              "objectProperty": "categoryAndFeeds",
+              "selectableValues": [],
+              "required": true,
+              "group": "",
+              "groupOrder": 2,
+              "layout": "column",
+              "hidden": false,
+              "pattern": "",
+              "patternInvalidMessage": "Invalid Input"
+            }
+          ],
+          "objectClassType": "com.thinkbiganalytics.policy.precondition.FeedExecutedSinceFeeds",
+          "objectShortClassType": "FeedExecutedSinceFeeds",
+          "propertyValuesDisplayString": "Dependent Feeds: null",
+          "sequence": null,
+          "groups": [
+            {
+              "group": "",
+              "layout": "column",
+              "properties": [
+                {
+                  "name": "Since Feed",
+                  "displayName": "Since Feed",
+                  "value": "{PLACEHOLDER_DAF--->organizzazione.feedName}",
+                  "values": [],
+                  "placeholder": "",
+                  "type": "currentFeed",
+                  "hint": "",
+                  "objectProperty": "sinceCategoryAndFeedName",
+                  "selectableValues": [],
+                  "required": false,
+                  "group": "",
+                  "groupOrder": 1,
+                  "layout": "column",
+                  "hidden": true,
+                  "pattern": "",
+                  "patternInvalidMessage": "Invalid Input"
+                },
+                {
+                  "name": "Dependent Feeds",
+                  "displayName": "Dependent Feeds",
+                  "value": null,
+                  "values": [],
+                  "placeholder": "Start typing a feed",
+                  "type": "feedChips",
+                  "hint": "Select feed(s) that this feed is dependent upon",
+                  "objectProperty": "categoryAndFeeds",
+                  "selectableValues": [],
+                  "required": true,
+                  "group": "",
+                  "groupOrder": 2,
+                  "layout": "column",
+                  "hidden": false,
+                  "pattern": "",
+                  "patternInvalidMessage": "Invalid Input"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "defineTable": false,
+  "allowPreconditions": true,
+  "dataTransformationFeed": true,
+  "table": {
+    "tableSchema": {
+      "name": "{PLACEHOLDER_DAF--->systemFeedName}",
+      "fields": [
+        {
+          "classType": "TableColumnDefinition",
+          "deleted": false,
+          "selectedSampleValue": "",
+          "name": "agency_id",
+          "_id": "6",
+          "validationErrors": {
+            "name": {},
+            "precision": {}
+          },
+          "description": null,
+          "dataType": "string",
+          "primaryKey": false,
+          "nullable": false,
+          "sampleValues": null,
+          "derivedDataType": "string",
+          "origName": "agency_id",
+          "origDataType": "string",
+          "history": null,
+          "dataTypeDisplay": "string"
+        }]
+    },
+    "sourceTableSchema": {
+      "name": "",
+      "tableSchema": null,
+      "fields": [
+        {
+          "classType": "TableColumnDefinition",
+          "deleted": false,
+          "selectedSampleValue": "",
+          "name": "agency_id",
+          "_id": "6",
+          "validationErrors": {
+            "name": {},
+            "precision": {}
+          },
+          "description": null,
+          "dataType": "string",
+          "primaryKey": false,
+          "nullable": false,
+          "sampleValues": null,
+          "derivedDataType": "string",
+          "origName": "agency_id",
+          "origDataType": "string",
+          "history": null,
+          "dataTypeDisplay": "string"
+        }]
+    },
+    "feedTableSchema": {
+      "name": null,
+      "fields": [
+        {
+          "classType": "TableColumnDefinition",
+          "deleted": false,
+          "selectedSampleValue": "",
+          "name": "agency_id",
+          "_id": "6",
+          "validationErrors": {
+            "name": {},
+            "precision": {}
+          },
+          "description": null,
+          "dataType": "string",
+          "primaryKey": false,
+          "nullable": false,
+          "sampleValues": null,
+          "derivedDataType": "string",
+          "origName": "agency_id",
+          "origDataType": "string",
+          "history": null,
+          "dataTypeDisplay": "string"
+        }]
+    },
+    "method": "EXISTING_TABLE",
+    "existingTableName": "",
+    "structured": false,
+    "targetMergeStrategy": "SYNC",
+    "feedFormat": "ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde' WITH SERDEPROPERTIES ( 'separatorChar' = ',' ,'escapeChar' = '\\\\' ,'quoteChar' = '\"') STORED AS TEXTFILE",
+    "targetFormat": "STORED AS PARQUET",
+    "feedTblProperties": "",
+    "fieldPolicies": [
+      {
+        "name": "agency_id",
+        "profile": false,
+        "standardization": null,
+        "validation": null,
+        "field": {
+          "classType": "TableColumnDefinition",
+          "deleted": false,
+          "selectedSampleValue": "",
+          "name": "agency_id",
+          "_id": "6",
+          "validationErrors": {
+            "name": {},
+            "precision": {}
+          },
+          "description": null,
+          "dataType": "string",
+          "primaryKey": false,
+          "nullable": false,
+          "sampleValues": null,
+          "derivedDataType": "string",
+          "origName": "agency_id",
+          "origDataType": "string",
+          "history": null,
+          "dataTypeDisplay": "string"
+        },
+        "fieldName": "agency_id",
+        "feedFieldName": "agency_id"
+      }],
+    "partitions": [],
+    "options": {
+      "compress": false,
+      "compressionFormat": "SNAPPY",
+      "auditLogging": true,
+      "encrypt": false,
+      "trackHistory": false
+    },
+    "sourceTableIncrementalDateField": null
+  },
+  "category": {
+    "id": "099dc639-f759-4444-9d22-64e4c2ca7e2c",
+    "name": "{PLACEHOLDER_DAF--->category}",
+    "systemName": "{PLACEHOLDER_DAF---> category}"
+  },
+  "dataOwner": "",
+  "tags": [],
+  "reusableFeed": false,
+  "dataTransformation": {
+    "chartViewModel": {
+      "nodes": [
+        {
+          "name": "{PLACEHOLDER_DAF---> categoryDependent.feedNameDependent}",
+          "id": 10,
+          "datasourceId": "HIVE",
+          "x": 20,
+          "y": 20,
+          "nodeAttributes": {
+            "attributes": [
+              {
+                "sampleValues": [],
+                "name": "agency_id",
+                "description": null,
+                "nativeDataType": "VARCHAR",
+                "derivedDataType": "string",
+                "primaryKey": false,
+                "nullable": true,
+                "modifiable": true,
+                "dataTypeDescriptor": null,
+                "updatedTracker": false,
+                "precisionScale": null,
+                "createdTracker": false,
+                "tags": null,
+                "dataTypeWithPrecisionAndScale": "string",
+                "descriptionWithoutNewLines": "",
+                "selected": true
+              },
+              {
+                "sampleValues": [],
+                "name": "indirizzo",
+                "description": null,
+                "nativeDataType": "VARCHAR",
+                "derivedDataType": "string",
+                "primaryKey": false,
+                "nullable": true,
+                "modifiable": true,
+                "dataTypeDescriptor": null,
+                "updatedTracker": false,
+                "precisionScale": null,
+                "createdTracker": false,
+                "tags": null,
+                "dataTypeWithPrecisionAndScale": "string",
+                "descriptionWithoutNewLines": "",
+                "selected": true
+              },
+              {
+                "sampleValues": [],
+                "name": "stato",
+                "description": null,
+                "nativeDataType": "VARCHAR",
+                "derivedDataType": "string",
+                "primaryKey": false,
+                "nullable": true,
+                "modifiable": true,
+                "dataTypeDescriptor": null,
+                "updatedTracker": false,
+                "precisionScale": null,
+                "createdTracker": false,
+                "tags": null,
+                "dataTypeWithPrecisionAndScale": "string",
+                "descriptionWithoutNewLines": "",
+                "selected": true
+              },
+              {
+                "sampleValues": [],
+                "name": "processing_dttm",
+                "description": null,
+                "nativeDataType": "VARCHAR",
+                "derivedDataType": "string",
+                "primaryKey": false,
+                "nullable": true,
+                "modifiable": true,
+                "dataTypeDescriptor": null,
+                "updatedTracker": false,
+                "precisionScale": null,
+                "createdTracker": false,
+                "tags": null,
+                "dataTypeWithPrecisionAndScale": "string",
+                "descriptionWithoutNewLines": "",
+                "selected": true
+              }
+            ],
+            "reference": [
+              "{PLACEHOLDER_DAF---> categoryDependent}",
+              "{PLACEHOLDER_DAF---> feedNameDependent}"
+            ],
+            "selected": []
+          },
+          "connectors": {
+            "top": {
+              "location": "TOP",
+              "id": 7
+            },
+            "bottom": {
+              "location": "BOTTOM",
+              "id": 8
+            },
+            "left": {
+              "location": "LEFT",
+              "id": 5
+            },
+            "right": {
+              "location": "RIGHT",
+              "id": 6
+            }
+          },
+          "inputConnectors": [
+            {
+              "name": ""
+            }
+          ],
+          "outputConnectors": [
+            {
+              "name": ""
+            }
+          ],
+          "width": 250
+        }
+      ],
+      "connections": []
+    },
+    "datasourceIds": [],
+    "datasources": null,
+    "dataTransformScript": "import org.apache.spark.sql._\nvar df = sqlContext.sql(\"SELECT tbl10.`agency_id`, tbl10.`indirizzo`, tbl10.`stato`, tbl10.`processing_dttm` AS `indirizzi_agency_processing_dttm` FROM `test__test`.`indirizzi_agency` tbl10\")\ndf = df\ndf = df.select(df(\"*\"), functions.concat(df(\"indirizzo\"), functions.lit(\"_\"), df(\"stato\")).as(\"nuova_colonna\"))\ndf\n",
+    "sql": "SELECT tbl10.`agency_id`, tbl10.`indirizzo`, tbl10.`stato`, tbl10.`processing_dttm` AS `indirizzi_agency_processing_dttm` FROM `test__test`.`indirizzi_agency` tbl10",
+    "states": [
+    ],
+    "$selectedColumnsAndTables": [
+      {
+        "column": "agency_id",
+        "alias": "tbl10",
+        "tableName": "{PLACEHOLDER_DAF---> categoryDependent.feedNameDependent}",
+        "tableColumn": "agency_id"
+      },
+      {
+        "column": "indirizzo",
+        "alias": "tbl10",
+        "tableName": "{PLACEHOLDER_DAF---> categoryDependent.feedNameDependent}",
+        "tableColumn": "indirizzo"
+      },
+      {
+        "column": "stato",
+        "alias": "tbl10",
+        "tableName": "{PLACEHOLDER_DAF---> categoryDependent.feedNameDependent}",
+        "tableColumn": "stato"
+      },
+      {
+        "column": "processing_dttm",
+        "alias": "tbl10",
+        "tableName": "{PLACEHOLDER_DAF---> categoryDependent.feedNameDependent}",
+        "tableColumn": "processing_dttm"
+      }
+    ],
+    "$datasources": [
+      {
+        "id": "HIVE",
+        "name": "Hive"
+      }
+    ],
+    "$selectedDatasourceId": "HIVE",
+    "sampleFileChanged": false
+  },
+  "userProperties": [
+    {
+      "description": null,
+      "displayName": "daf_type",
+      "order": 0,
+      "required": false,
+      "systemName": "dafType",
+      "locked": true,
+      "value": "derived",
+      "$error": {
+        "duplicate": false,
+        "missingName": false,
+        "missingValue": false
+      }
+    },
+    {
+      "description": null,
+      "displayName": "daf_domain",
+      "order": 1,
+      "required": false,
+      "systemName": "dafDomain",
+      "locked": true,
+      "value": "{DAF_DOMAIN}",
+      "$error": {
+        "duplicate": false,
+        "missingName": false,
+        "missingValue": false
+      }
+    },
+    {
+      "description": null,
+      "displayName": "daf_subdomain",
+      "order": 2,
+      "required": false,
+      "systemName": "dafSubdomain",
+      "locked": true,
+      "value": "{DAF_SUBDOMAIN}",
+      "$error": {
+        "duplicate": false,
+        "missingName": false,
+        "missingValue": false
+      }
+    },
+    {
+      "description": null,
+      "displayName": "daf_owner",
+      "order": 4,
+      "required": false,
+      "systemName": "dafOwner",
+      "locked": true,
+      "value": "{DAF_OWNER}",
+      "$error": {
+        "duplicate": false,
+        "missingName": false,
+        "missingValue": false
+      }
+    }
+  ],
+  "options": {
+    "skipHeader": false
+  },
+  "active": true,
+  "roleMemberships": [],
+  "owner": {
+    "displayName": "Data Lake Administrator",
+    "email": null,
+    "enabled": true,
+    "groups": [
+      "admin",
+      "user"
+    ],
+    "systemName": "dladmin",
+    "name": "Data Lake Administrator",
+    "title": "Data Lake Administrator",
+    "type": "user",
+    "_lowername": "data lake administrator",
+    "_lowerSystemName": "dladmin",
+    "_lowerDisplayName": "data lake administrator"
+  },
+  "roleMembershipsUpdated": false,
+  "tableOption": {},
+  "cloned": false,
+  "usedByFeeds": [],
+  "allowIndexing": true,
+  "historyReindexingStatus": "NEVER_RUN",
+  "view": {
+    "generalInfo": {
+      "disabled": false
+    },
+    "feedDetails": {
+      "disabled": false
+    },
+    "table": {
+      "disabled": false
+    },
+    "dataPolicies": {
+      "disabled": false
+    },
+    "properties": {
+      "disabled": false,
+      "dataOwner": {
+        "disabled": false
+      },
+      "tags": {
+        "disabled": false
+      }
+    },
+    "accessControl": {
+      "disabled": false
+    },
+    "schedule": {
+      "disabled": false,
+      "schedulingPeriod": {
+        "disabled": false
+      },
+      "schedulingStrategy": {
+        "disabled": false
+      },
+      "active": {
+        "disabled": false
+      },
+      "executionNode": {
+        "disabled": false
+      },
+      "preconditions": {
+        "disabled": false
+      }
+    }
+  },
+  "totalSteps": 9,
+  "stepperTemplateUrl": "js/feed-mgr/feeds/define-feed/define-feed-stepper.html",
+  "feedDescriptor": "",
+  "templateName": "Dataset Trigger Transformation",
+  "templateTableOption": "DATA_TRANSFORMATION",
+  "totalPreSteps": 0,
+  "renderTemporaryPreStep": false,
+  "isStream": false,
+  "schemaChanged": false
+}
