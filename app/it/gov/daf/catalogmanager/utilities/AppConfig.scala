@@ -5,7 +5,6 @@ package it.gov.daf.catalogmanager.utilities
   */
 
 import javax.inject.Inject
-
 import play.api.{Configuration, Environment}
 
 /**
@@ -26,6 +25,9 @@ private class AppConfig @Inject()(playConfig: Configuration) {
   val cookieExpiration :Option[Long] = playConfig.getLong("cookie.expiration")
   val ingestionUrl :Option[String] = playConfig.getString("ingestion.url")
   val kafkaProxyUrl: Option[String] = playConfig.getString("kafkaProxy.url")
+  val elasticsearchUrl = playConfig.getString("elasticsearch.url")
+  val elasticsearchPort = playConfig.getInt("elasticsearch.port")
+
 
 }
 
@@ -34,6 +36,9 @@ private class AppConfig @Inject()(playConfig: Configuration) {
 object ConfigReader {
 
   private val config = new AppConfig(Configuration.load(Environment.simple()))
+
+  require(config.elasticsearchUrl.nonEmpty, "A elasticsearch url must be specified")
+
   def userIdHeader: String = config.userIdHeader.getOrElse("userid")
   def getCkanHost: String = config.ckanHost.getOrElse("localhost")
   def getCkanGeoUrl = config.ckanGeoUrl.getOrElse("")
@@ -48,6 +53,8 @@ object ConfigReader {
   def cookieExpiration:Long = config.cookieExpiration.getOrElse(30L)// 30 min by default
   def ingestionUrl :String = config.ingestionUrl.getOrElse("http://localhost:9003")
   def kafkaProxyUrl: String = config.kafkaProxyUrl.getOrElse("")
+  def getElasticsearchUrl: String = config.elasticsearchUrl.get
+  def getElasticsearchPort: Int = config.elasticsearchPort.getOrElse(9200)
 
 }
 

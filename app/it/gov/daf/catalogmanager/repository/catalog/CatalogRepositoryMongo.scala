@@ -1,15 +1,20 @@
 package it.gov.daf.catalogmanager.repository.catalog
 
-import catalog_manager.yaml.{Dataset, DatasetStandardFields, Error, Field, MetaCatalog, MetadataCat, ResponseWrites, Success}
+import catalog_manager.yaml.{Dataset, DatasetNameFields, Error, MetaCatalog, MetadataCat, ResponseWrites, Success}
 import com.mongodb
 import com.mongodb.DBObject
 import com.mongodb.casbah.MongoClient
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import com.mongodb.casbah.Imports._
-import it.gov.daf.catalogmanager.service.CkanRegistry
+import com.sksamuel.elastic4s.http.ElasticDsl.{search, termsAgg}
 import it.gov.daf.catalogmanager.utilities.{CatalogManager, ConfigReader}
 import play.api.libs.ws.WSClient
 import play.api.Logger
+import com.sksamuel.elastic4s.http.search.SearchResponse
+import com.sksamuel.elastic4s.ElasticsearchClientUri
+import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.http.HttpClient
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future
 
@@ -25,6 +30,9 @@ class CatalogRepositoryMongo extends  CatalogRepository{
   private val userName = ConfigReader.userName
   private val source = ConfigReader.database
   private val password = ConfigReader.password
+
+  private val elasticsearchUrl = ConfigReader.getElasticsearchUrl
+  private val elasticsearchPort = ConfigReader.getElasticsearchPort
 
   private val DATIPUBBLICI_HOST = ConfigReader.datipubbliciHost
 
@@ -82,6 +90,27 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     metaCatalog
   }
 
+  def internalCatalogByName(name: String) = {
+    val query = MongoDBObject("dcatapit.name" -> name)
+    val mongoClient = MongoClient(server, List(credentials))
+    val db = mongoClient(source)
+    val coll = db("catalog_test")
+    val result = coll.findOne(query)
+    mongoClient.close()
+    result match {
+      case Some(catalog) => {
+        val jsonString = com.mongodb.util.JSON.serialize(catalog)
+        val json = Json.parse(jsonString)
+        val metaCatalogJs = json.validate[MetaCatalog]
+        metaCatalogJs match {
+          case s: JsSuccess[MetaCatalog] => Some(s.get)
+          case _: JsError => None
+        }
+      }
+      case _ => None
+    }
+  }
+
   def catalogByName(name :String, groups: List[String]): Option[MetaCatalog] = {
     import mongodb.casbah.query.Imports._
 
@@ -113,7 +142,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     metaCatalog
   }
 
-  def deleteCatalogByName(nameCatalog: String, user: String, token: String, isAdmin: Boolean, wsClient: WSClient): Future[Either[Error, Success]] = {
+  def deleteCatalogByName(nameCatalog: String, user: String, token: String, wsClient: WSClient): Future[Either[Error, Success]] = {
     import mongodb.casbah.query.Imports.$and
     import mongodb.casbah.commons.Imports._
 
@@ -123,9 +152,8 @@ class CatalogRepositoryMongo extends  CatalogRepository{
 
     widgetsResp.map{ res =>
       if(res.status == 200 && !res.body.equals("[]")) Left(Error(s"is not possible delete catalog $nameCatalog, it has some widgets", Some(403), None))
-      else {
-        val query = if(isAdmin) $and(MongoDBObject("dcatapit.name" -> nameCatalog), "operational.acl.groupName" $exists  false)
-        else $and(MongoDBObject("dcatapit.name" -> nameCatalog), MongoDBObject("dcatapit.author" -> user), "operational.acl.groupName" $exists  false)
+      else if(res.status == 200) {
+        val query = $and(MongoDBObject("dcatapit.name" -> nameCatalog), MongoDBObject("dcatapit.author" -> user), "operational.acl.groupName" $exists  false)
         val mongoClient = MongoClient(server, List(credentials))
         val db = mongoClient(source)
         val coll = db("catalog_test")
@@ -133,7 +161,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
         mongoClient.close()
         Logger.logger.debug(s"$user deleted $nameCatalog from catalog_test result: ${result.isRight}")
         result
-      }
+      } else {Logger.logger.debug("connection error");Left(Error(s"connection error", Some(500), None))}
     }
   }
 
@@ -187,7 +215,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
           val obj = com.mongodb.util.JSON.parse(json.toString()).asInstanceOf[DBObject]
           val inserted = coll.insert(obj)
           mongoClient.close()
-          val msg = meta.operational.logical_uri
+          val msg = meta.operational.logical_uri.getOrElse("")
           msg
         case _ =>
           println("Error");
@@ -204,7 +232,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
           val json: JsValue = MetaCatalogWrites.writes(meta)
           val obj = com.mongodb.util.JSON.parse(json.toString()).asInstanceOf[DBObject]
           val inserted = coll.insert(obj)
-          val msg = meta.operational.logical_uri
+          val msg = meta.operational.logical_uri.getOrElse("")
           msg
         case _ =>
           println("Error");
@@ -247,7 +275,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
           val obj = com.mongodb.util.JSON.parse(json.toString()).asInstanceOf[DBObject]
           val inserted = coll.insert(obj)
           mongoClient.close()
-          val msg = meta.operational.logical_uri
+          val msg = meta.operational.logical_uri.getOrElse("")
           msg
         case _ =>
           println("Error");
@@ -259,12 +287,12 @@ class CatalogRepositoryMongo extends  CatalogRepository{
       val random = scala.util.Random
       val id = random.nextInt(1000).toString
       val res: Option[MetaCatalog]= (CatalogManager.writeOrdAndStd(metaCatalog))
-      val message = res match {
+      val message: String = res match {
         case Some(meta) =>
           val json: JsValue = MetaCatalogWrites.writes(meta)
           val obj = com.mongodb.util.JSON.parse(json.toString()).asInstanceOf[DBObject]
           val inserted = coll.insert(obj)
-          val msg = meta.operational.logical_uri
+          val msg = meta.operational.logical_uri.getOrElse("")
           msg
         case _ =>
           println("Error");
@@ -293,7 +321,23 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     }
   }
 
-  def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetStandardFields]] = {
+  def getFieldsVoc: Future[Seq[DatasetNameFields]] = {
+    val mongoClient = MongoClient(server, List(credentials))
+    val db = mongoClient(source)
+    val coll = db("catalog_test")
+    val result = coll.find(MongoDBObject("operational.is_vocabulary" -> true)).toList
+    mongoClient.close()
+    val jsonString = com.mongodb.util.JSON.serialize(result)
+    val json = Json.parse(jsonString)
+    val metaCatalogJs = json.validate[Seq[MetaCatalog]]
+    val metaCatalog: Seq[MetaCatalog] = metaCatalogJs match {
+      case s: JsSuccess[Seq[MetaCatalog]] => s.get
+      case e: JsError => Seq()
+    }
+    Future.successful(metaCatalog.map{catalog => DatasetNameFields(catalog.dcatapit.name, catalog.dataschema.avro.fields.get.map(f => f.name))})
+  }
+
+  def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetNameFields]] = {
     import mongodb.casbah.query.Imports._
 
     val query = $and(
@@ -312,7 +356,39 @@ class CatalogRepositoryMongo extends  CatalogRepository{
       case s: JsSuccess[Seq[MetaCatalog]] => s.get
       case e: JsError => Seq()
     }
-    Future.successful(metaCatalog.map{catalog => DatasetStandardFields(catalog.dcatapit.name, catalog.dataschema.avro.fields.get.map(f => f.name))})
+    Future.successful(metaCatalog.map{catalog => DatasetNameFields(catalog.dcatapit.name, catalog.dataschema.avro.fields.get.map(f => f.name))})
+  }
+
+  def getTag: Future[Seq[String]] = {
+    import scala.concurrent.ExecutionContext.Implicits._
+
+    Logger.logger.debug(s"elasticsearchUrl: $elasticsearchUrl elasticsearchPort: $elasticsearchPort")
+
+    val client = HttpClient(ElasticsearchClientUri(elasticsearchUrl, elasticsearchPort))
+    val index = "ckan"
+    val searchType = "catalog_test"
+    val fieldsTags = "dataschema.flatSchema.metadata.tag.keyword"
+    val datasetTags = "dcatapit.tags.name.keyword"
+
+    val query = search(index).types(searchType)
+      .fetchSource(false)
+      .aggregations(
+        termsAgg("tagDatasets", datasetTags), termsAgg("tagFields", fieldsTags)
+      )
+
+    val searchResponse: Future[SearchResponse] = client.execute(query)
+
+    val response: Future[Seq[String]] = searchResponse.map{ res =>
+      res.aggregations.flatMap{aggr =>
+        aggr._2.asInstanceOf[Map[String, Int]]("buckets").asInstanceOf[List[Map[String, AnyVal]]].map(elem => elem("key").asInstanceOf[String])
+      }.toSeq.distinct
+    }
+
+    response onComplete {
+      res => Logger.debug(s"found ${res.getOrElse(Seq("no_tags")).size} tags")
+    }
+
+    response
   }
 
 

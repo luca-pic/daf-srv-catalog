@@ -48,6 +48,8 @@ import scala.concurrent.Await
 import yaml.ResponseWrites.MetaCatalogWrites.writes
 import play.api.mvc.Headers
 import it.gov.daf.common.utils.RequestContext
+import java.lang
+import akka.stream.ConnectionException
 
 /**
  * This controller is re-generated after each change in the specification.
@@ -56,7 +58,7 @@ import it.gov.daf.common.utils.RequestContext
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-                                                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -81,9 +83,9 @@ package catalog_manager.yaml {
         val KYLOPWD = config.get.getString("kylo.userpwd").getOrElse("XXXXXXXXXXX")
         val KAFKAPROXY = config.get.getString("kafkaProxy.url").get
 
-        private def sendMessageKafkaProxy(user: String, catalog: MetaCatalog, token: String): Future[Either[Error, Success]] = {
+        private def sendMessageKafkaProxy(user: String, catalog: String, token: String): Future[Either[Error, Success]] = {
             Logger.logger.debug(s"kafka proxy $KAFKAPROXY")
-            val jsonMetacatol = writes(catalog)
+            val jsonMetacatol = Json.parse(catalog)
             val jsonUser: String = s""""user":"$user""""
             val jsonToken = s""""token":"$token""""
             val jsonBody = Json.parse(
@@ -161,14 +163,21 @@ package catalog_manager.yaml {
                     else response.left.get.message
                 }
 
+                def rollBackCatalog(catalog: MetaCatalog) ={
+                    logger.debug(s"rollback catalog on mongoDB: $catalog")
+                    val result: Either[Error, Success] = ServiceRegistry.catalogRepository.createCatalog(catalog, catalog.dcatapit.owner_org, ws)
+                    logger.debug(s"result rollback: $result")
+                }
+
                 val user = CredentialManager.readCredentialFromRequest(currentRequest).username
 
-                val isAdmin = CredentialManager.isDafSysAdmin(currentRequest)
-                val feedName = s"${org}.${org}_o_${name}"
+                val feedName = s"$org.${org}_o_$name"
 
                 val token = readTokenFromRequest(currentRequest.headers, true)
 
-                val futureResponseMongo = ServiceRegistry.catalogService.deleteCatalogByName(name, user, token.get, isAdmin, ws)
+                val catalogToDelete = ServiceRegistry.catalogService.internalCatalogByName(name)
+
+                val futureResponseMongo = ServiceRegistry.catalogService.deleteCatalogByName(name, user, token.get, ws)
 
                 val futureResponseKylo = futureResponseMongo.flatMap {
                     case Right(_) => kylo.deleteFeed(feedName, user)
@@ -182,7 +191,7 @@ package catalog_manager.yaml {
 
                 futureResponses.flatMap {
                     case Right(s) => DeleteCatalog200(s)
-                    case Left(e) => DeleteCatalog500(e)
+                    case Left(e) => rollBackCatalog(catalogToDelete.get); DeleteCatalog500(e)
                 }
             }
 //          NotImplementedYet
@@ -216,7 +225,12 @@ package catalog_manager.yaml {
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.getDatasetStandardFields
             RequestContext.execInContext[Future[GetDatasetStandardFieldsType[T] forSome { type T }]]("getDatasetStandardFields") { () =>
               val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
-              GetDatasetStandardFields200(ServiceRegistry.catalogService.getDatasetStandardFields(credentials.username, credentials.groups.toList))
+              val response: Future[Seq[DatasetNameFields]] = ServiceRegistry.catalogService.getDatasetStandardFields(credentials.username, credentials.groups.toList)
+              response onComplete { seq =>
+                if(seq.getOrElse(Seq[DatasetNameFields]()).isEmpty) logger.debug(s"nof found dataset standard fields for ${credentials.username}")
+                else logger.debug(s"found ${seq.get.size} dataset standard")
+              }
+              GetDatasetStandardFields200(response)
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.getDatasetStandardFields
         }
@@ -252,6 +266,14 @@ package catalog_manager.yaml {
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.createdatasetcatalogExtOpenData
         }
+        val getTags = getTagsAction {  _ =>  
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.getTags
+            RequestContext.execInContext[Future[GetTagsType[T] forSome { type T }]]("getTags") { () =>
+            GetTags200(ServiceRegistry.catalogService.getTag)
+          }
+//            NotImplementedYet
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.getTags
+        }
         val getckandatasetList = getckandatasetListAction {  _ =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.getckandatasetList
             RequestContext.execInContext[Future[GetckandatasetListType[T] forSome { type T }]]("getckandatasetList") { () =>
@@ -284,7 +306,7 @@ package catalog_manager.yaml {
             RequestContext.execInContext[Future[DatasetcatalogsType[T] forSome { type T }]]("datasetcatalogs") { () =>
                 val pageIng :Option[Int] = page
                 val limitIng :Option[Int] = limit
-                val catalogs  = ServiceRegistry.catalogService.listCatalogs(page,limit)
+                val catalogs = ServiceRegistry.catalogService.listCatalogs(page,limit)
 
                 catalogs match {
                     case Seq() => Datasetcatalogs401("No data")
@@ -311,16 +333,17 @@ package catalog_manager.yaml {
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.voc_dcat2dafsubtheme
         }
-        val addQueueCatalog = addQueueCatalogAction { (catalog: MetaCatalog) =>  
+        val addQueueCatalog = addQueueCatalogAction { (catalog: StringToKafka) =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.addQueueCatalog
             RequestContext.execInContext[Future[AddQueueCatalogType[T] forSome { type T }]]("addQueueCatalog") { () =>
+              logger.debug(s"catalog: ${catalog.catalog}")
                 val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
                 if( CredentialManager.isDafSysAdmin(currentRequest) || CredentialManager.isOrgsEditor(currentRequest, credentials.groups) ||
                   CredentialManager.isOrgsAdmin(currentRequest, credentials.groups)) {
                     val token = readTokenFromRequest(currentRequest.headers, false)
                     token match {
                         case Some(t) => {
-                            val futureKafkaResp = sendMessageKafkaProxy(credentials.username, catalog, t)
+                            val futureKafkaResp = sendMessageKafkaProxy(credentials.username, catalog.catalog, t)
                             futureKafkaResp.flatMap{
                                 case Right(r) => logger.info("sending to kafka");AddQueueCatalog200(r)
                                 case Left(l) => AddQueueCatalog500(l)
@@ -411,8 +434,14 @@ package catalog_manager.yaml {
                     //If(!created.message.equals("Error")) sendMessaggeKafkaProxy(credentials.username, catalog)
                     //sendMessaggeKafkaProxy(credentials.username, catalog)
                     //logger.info("sending to kafka")
-                    if(created.isRight) Createdatasetcatalog200(created.right.get)
-                    else Createdatasetcatalog500(created.left.get)
+                    if(created.isRight){
+                        Logger.logger.debug(s"${credentials.username} added ${catalog.dcatapit.name}")
+                        Createdatasetcatalog200(created.right.get)
+                    }
+                    else{
+                        Logger.logger.debug(s"error in create catalog ${catalog.dcatapit.name}")
+                        Createdatasetcatalog500(created.left.get)
+                    }
 
                 }else Createdatasetcatalog401(s"Admin or editor permissions required (organization: $datasetOrg)")
             }
@@ -562,6 +591,13 @@ package catalog_manager.yaml {
                 Voc_daf2dcatsubtheme200(subthemeList)
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.voc_daf2dcatsubtheme
+        }
+        val getFieldsVoc = getFieldsVocAction {  _ =>  
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.getFieldsVoc
+            RequestContext.execInContext[Future[GetFieldsVocType[T] forSome { type T }]]("getFieldsVoc") { () =>
+            GetFieldsVoc200(ServiceRegistry.catalogService.getFieldsVoc)
+          }
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.getFieldsVoc
         }
         val createckanorganization = createckanorganizationAction { (organization: Organization) =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.createckanorganization
@@ -842,6 +878,14 @@ package catalog_manager.yaml {
            // NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.startKyloFedd
         }
+    
+     // Dead code for absent methodCatalog_managerYaml.getvocFieldsGetall
+     /*
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.getvocFieldsGetall
+            NotImplementedYet
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.getvocFieldsGetall
+     */
+
     
     }
 }
