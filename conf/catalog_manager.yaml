@@ -396,6 +396,25 @@ paths:
           schema:
             type: object
             $ref: '#/definitions/Error'
+  "/catalog-ds/standard/fields":
+    get:
+      tags:
+      - DatasetCatalog
+      description: get all fields of dataset standard
+      operationId: getDatasetStandardFields
+      produces:
+      - application/json
+      responses:
+        200:
+          description: set of DatasetStandardFields object
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/DatasetStandardFields'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
   "/kafka/notifications/add":
     post:
       tags:
@@ -1472,6 +1491,18 @@ definitions:
       metadata:
         $ref: '#/definitions/Metadata'
         description: JSON object containing metadata information for the field
+  DatasetStandardFields:
+    required:
+      - name
+      - fields
+    properties:
+      name:
+        type: string
+        description: the name of the dataset standard
+      fields:
+        type: array
+        items:
+          type: string
   Metadata:
     required:
     type: object

@@ -1,6 +1,6 @@
 package it.gov.daf.catalogmanager.repository.catalog
 
-import catalog_manager.yaml.{Dataset, Error, MetaCatalog, MetadataCat, ResponseWrites, Success}
+import catalog_manager.yaml.{Dataset, DatasetStandardFields, Error, Field, MetaCatalog, MetadataCat, ResponseWrites, Success}
 import com.mongodb
 import com.mongodb.DBObject
 import com.mongodb.casbah.MongoClient
@@ -82,6 +82,27 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     metaCatalog
   }
 
+  def internalCatalogByName(name: String) = {
+    val query = MongoDBObject("dcatapit.name" -> name)
+    val mongoClient = MongoClient(server, List(credentials))
+    val db = mongoClient(source)
+    val coll = db("catalog_test")
+    val result = coll.findOne(query)
+    mongoClient.close()
+    result match {
+      case Some(catalog) => {
+        val jsonString = com.mongodb.util.JSON.serialize(catalog)
+        val json = Json.parse(jsonString)
+        val metaCatalogJs = json.validate[MetaCatalog]
+        metaCatalogJs match {
+          case s: JsSuccess[MetaCatalog] => Some(s.get)
+          case _: JsError => None
+        }
+      }
+      case _ => None
+    }
+  }
+
   def catalogByName(name :String, groups: List[String]): Option[MetaCatalog] = {
     import mongodb.casbah.query.Imports._
 
@@ -113,7 +134,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     metaCatalog
   }
 
-  def deleteCatalogByName(nameCatalog: String, user: String, token: String, isAdmin: Boolean, wsClient: WSClient): Future[Either[Error, Success]] = {
+  def deleteCatalogByName(nameCatalog: String, user: String, token: String, wsClient: WSClient): Future[Either[Error, Success]] = {
     import mongodb.casbah.query.Imports.$and
     import mongodb.casbah.commons.Imports._
 
@@ -123,9 +144,8 @@ class CatalogRepositoryMongo extends  CatalogRepository{
 
     widgetsResp.map{ res =>
       if(res.status == 200 && !res.body.equals("[]")) Left(Error(s"is not possible delete catalog $nameCatalog, it has some widgets", Some(403), None))
-      else {
-        val query = if(isAdmin) $and(MongoDBObject("dcatapit.name" -> nameCatalog), "operational.acl.groupName" $exists  false)
-        else $and(MongoDBObject("dcatapit.name" -> nameCatalog), MongoDBObject("dcatapit.author" -> user), "operational.acl.groupName" $exists  false)
+      else if(res.status == 200) {
+        val query = $and(MongoDBObject("dcatapit.name" -> nameCatalog), MongoDBObject("dcatapit.author" -> user), "operational.acl.groupName" $exists  false)
         val mongoClient = MongoClient(server, List(credentials))
         val db = mongoClient(source)
         val coll = db("catalog_test")
@@ -133,7 +153,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
         mongoClient.close()
         Logger.logger.debug(s"$user deleted $nameCatalog from catalog_test result: ${result.isRight}")
         result
-      }
+      } else {Logger.logger.debug("connection error");Left(Error(s"connection error", Some(500), None))}
     }
   }
 
@@ -291,6 +311,28 @@ class CatalogRepositoryMongo extends  CatalogRepository{
       case Some(_) => Some(true)
       case None => None
     }
+  }
+
+  def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetStandardFields]] = {
+    import mongodb.casbah.query.Imports._
+
+    val query = $and(
+      $or(MongoDBObject("dcatapit.author" -> user), "operational.acl.groupName" $in groups),
+      MongoDBObject("operational.is_std" -> true)
+    )
+    val mongoClient = MongoClient(server, List(credentials))
+    val db = mongoClient(source)
+    val coll = db("catalog_test")
+    val results = coll.find(query).toList
+    mongoClient.close
+    val jsonString = com.mongodb.util.JSON.serialize(results)
+    val json = Json.parse(jsonString)
+    val metaCatalogJs = json.validate[Seq[MetaCatalog]]
+    val metaCatalog = metaCatalogJs match {
+      case s: JsSuccess[Seq[MetaCatalog]] => s.get
+      case e: JsError => Seq()
+    }
+    Future.successful(metaCatalog.map{catalog => DatasetStandardFields(catalog.dcatapit.name, catalog.dataschema.avro.fields.get.map(f => f.name))})
   }
 
 
