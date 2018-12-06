@@ -58,7 +58,7 @@ import akka.stream.ConnectionException
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-                
+                        
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -787,93 +787,112 @@ package catalog_manager.yaml {
             val (file_type, feed) = input
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.startKyloFedd
             RequestContext.execInContext[Future[StartKyloFeddType[T] forSome { type T }]]("startKyloFedd") { () =>
-                val skipHeader = file_type match {
-                    case "csv" => true
-                    case "json" => false
+
+                if (feed.operational.type_info.isDefined && feed.operational.type_info.get.dataset_type.equals("derived")) {
+                    logger.info("feed started")
+
+                    val streamKyloTemplate = new FileInputStream(Environment.simple().getFile("/data/kylo/template_trasformation.json"))
+
+                    val kyloTemplate = try {
+                        Json.parse(streamKyloTemplate)
+                    } finally {
+                        streamKyloTemplate.close()
+                    }
+
+                  //  KyloTrasformers.feedTrasformationTemplate(fe)
+
+                    StartKyloFedd401(Error("Feed not created", Option(401), None))
+                } else {
+
+
+                    val skipHeader = file_type match {
+                        case "csv" => true
+                        case "json" => false
+                    }
+
+
+                    val ingest = feed.operational.input_src match {
+                        case InputSrc(Some(_), None, None, _) => "sftp"
+                        case InputSrc(None, Some(_), None, _) => "srv_pull"
+                        case InputSrc(None, None, Some(_), _) => "srv_push"
+                    }
+
+                    val user = CredentialManager.readCredentialFromRequest(currentRequest).username
+
+                    val domain = feed.operational.theme
+                    val subDomain = feed.operational.subtheme
+                    val dsName = feed.dcatapit.name
+
+
+                    val path = ingest match {
+                        case "srv_push" => s"/uploads/$user/$domain/$subDomain/$dsName"
+                        case _ => s"/home/$user/ftp/$domain/$subDomain/$dsName"
+                    }
+
+                    logger.debug(s"$ingest: $path")
+
+
+                    val templateProperties = ingest match {
+                        case "sftp" => kylo.sftpRemoteIngest(file_type, path)
+                        case "srv_pull" => kylo.wsIngest(file_type, feed)
+                        case "srv_push" => kylo.hdfsIngest(file_type, path)
+                    }
+
+                    val categoryFuture = kylo.categoryFuture(feed)
+
+                    val streamKyloTemplate = new FileInputStream(Environment.simple().getFile("/data/kylo/template_test.json"))
+
+                    val kyloTemplate = try {
+                        Json.parse(streamKyloTemplate)
+                    } finally {
+                        streamKyloTemplate.close()
+                    }
+
+                    val sftpPath = URLEncoder.encode(s"$domain/$subDomain/$dsName", "UTF-8")
+
+                    //            val createDir = ws.url("http://security-manager.default.svc.cluster.local:9000/security-manager/v1/sftp/init/" + URLEncoder.encode(sftpPath, "UTF-8") + s"?orgName=${feed.dcatapit.owner_org.get}")
+                    val createDir = ws.url(SEC_MANAGER_HOST + "/security-manager/v1/sftp/init/" + sftpPath + s"?orgName=${feed.dcatapit.owner_org.get}")
+                      .withHeaders(("authorization", currentRequest.headers.get("authorization").get))
+
+                    //val trasformed = kyloTemplate.transform(KyloTrasformers.feedTrasform(feed))
+
+                    val kyloSchema = feed.dataschema.kyloSchema.get
+                    val inferJson = Json.parse(kyloSchema)
+
+                    val feedCreation = ws.url(KYLOURL + "/api/v1/feedmgr/feeds")
+                      .withAuth(KYLOUSER, KYLOPWD, WSAuthScheme.BASIC)
+
+                    val feedData = for {
+                        (template, templates) <- templateProperties
+                        created <- createDir.get()
+                        category <- categoryFuture
+                        trasformed <- Future(kyloTemplate.transform(
+                            KyloTrasformers.feedTrasform(feed,
+                                template,
+                                templates,
+                                inferJson,
+                                category,
+                                file_type,
+                                skipHeader)
+                        )
+                        )
+                    } yield trasformed
+
+                    val createFeed: Future[WSResponse] = feedData.flatMap {
+                        case s: JsSuccess[JsValue] => logger.debug(Json.stringify(s.get)); feedCreation.post(s.get)
+                        case e: JsError => throw new Exception(JsError.toJson(e).toString())
+                    }
+
+                    createFeed onComplete (r => Logger.logger.debug(s"kyloResp: ${r.get.status}"))
+
+                    val result = createFeed.flatMap {
+                        // Assuming status 200 (OK) is a valid result for you.
+                        case resp: WSResponse if resp.status == 200 => logger.debug(Json.stringify(resp.json)); StartKyloFedd200(yaml.Success("Feed started", Option(resp.body)))
+                        case _ => StartKyloFedd401(Error("Feed not created", Option(401), None))
+                    }
+
+                    result
                 }
-
-
-                val ingest = feed.operational.input_src match {
-                    case  InputSrc(Some(_), None, None, _) => "sftp"
-                    case  InputSrc(None, Some(_), None, _) => "srv_pull"
-                    case  InputSrc(None, None, Some(_), _) => "srv_push"
-                }
-
-                val user = CredentialManager.readCredentialFromRequest(currentRequest).username
-
-                val domain = feed.operational.theme
-                val subDomain = feed.operational.subtheme
-                val dsName = feed.dcatapit.name
-
-
-                val path = ingest match {
-                    case "srv_push" => s"/uploads/$user/$domain/$subDomain/$dsName"
-                    case _ => s"/home/$user/ftp/$domain/$subDomain/$dsName"
-                }
-
-                logger.debug(s"$ingest: $path")
-
-
-                val templateProperties = ingest match {
-                    case "sftp" => kylo.sftpRemoteIngest(file_type, path)
-                    case "srv_pull" => kylo.wsIngest(file_type, feed)
-                    case "srv_push" => kylo.hdfsIngest(file_type, path)
-                }
-
-                val categoryFuture = kylo.categoryFuture(feed)
-
-                val streamKyloTemplate = new FileInputStream(Environment.simple().getFile("/data/kylo/template_test.json"))
-
-                val kyloTemplate  = try {
-                    Json.parse(streamKyloTemplate)
-                } finally {
-                    streamKyloTemplate.close()
-                }
-
-                val sftpPath =  URLEncoder.encode(s"$domain/$subDomain/$dsName", "UTF-8")
-
-                //            val createDir = ws.url("http://security-manager.default.svc.cluster.local:9000/security-manager/v1/sftp/init/" + URLEncoder.encode(sftpPath, "UTF-8") + s"?orgName=${feed.dcatapit.owner_org.get}")
-                val createDir = ws.url(SEC_MANAGER_HOST + "/security-manager/v1/sftp/init/" + sftpPath + s"?orgName=${feed.dcatapit.owner_org.get}")
-                  .withHeaders(("authorization", currentRequest.headers.get("authorization").get))
-
-                //val trasformed = kyloTemplate.transform(KyloTrasformers.feedTrasform(feed))
-
-                val kyloSchema = feed.dataschema.kyloSchema.get
-                val inferJson = Json.parse(kyloSchema)
-
-                val feedCreation = ws.url(KYLOURL + "/api/v1/feedmgr/feeds")
-                  .withAuth(KYLOUSER, KYLOPWD, WSAuthScheme.BASIC)
-
-                val feedData = for {
-                    (template, templates) <- templateProperties
-                    created <-  createDir.get()
-                    category <- categoryFuture
-                    trasformed <-  Future(kyloTemplate.transform(
-                        KyloTrasformers.feedTrasform(feed,
-                            template,
-                            templates,
-                            inferJson,
-                            category,
-                            file_type,
-                            skipHeader)
-                    )
-                    )
-                } yield trasformed
-
-                val createFeed: Future[WSResponse] = feedData.flatMap {
-                    case s: JsSuccess[JsValue] => logger.debug(Json.stringify(s.get));feedCreation.post(s.get)
-                    case e: JsError => throw new Exception(JsError.toJson(e).toString())
-                }
-
-                createFeed onComplete(r => Logger.logger.debug(s"kyloResp: ${r.get.status}"))
-
-                val result = createFeed.flatMap {
-                    // Assuming status 200 (OK) is a valid result for you.
-                    case resp : WSResponse if resp.status == 200 => logger.debug(Json.stringify(resp.json));StartKyloFedd200(yaml.Success("Feed started", Option(resp.body)))
-                    case _ => StartKyloFedd401(Error("Feed not created", Option(401), None))
-                }
-
-                result
             }
            // NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.startKyloFedd
