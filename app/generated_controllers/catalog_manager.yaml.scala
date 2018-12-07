@@ -788,7 +788,7 @@ package catalog_manager.yaml {
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.startKyloFedd
             RequestContext.execInContext[Future[StartKyloFeddType[T] forSome { type T }]]("startKyloFedd") { () =>
 
-                if (feed.operational.type_info.isDefined && feed.operational.type_info.get.dataset_type.equals("derived")) {
+                if (feed.operational.type_info.isDefined && feed.operational.type_info.get.dataset_type.equals("derived_sql")) {
                     logger.info("feed started")
 
                     val streamKyloTemplate = new FileInputStream(Environment.simple().getFile("/data/kylo/template_trasformation.json"))
