@@ -58,7 +58,7 @@ import akka.stream.ConnectionException
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-                        
+                                    
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -808,13 +808,10 @@ package catalog_manager.yaml {
                       .withAuth(KYLOUSER, KYLOPWD, WSAuthScheme.BASIC)
 
                     val feedData = for {
-
                         category <- categoryFuture
                         trasformed <- Future(kyloTemplate.transform(
                             KyloTrasformers.feedTrasformationTemplate(feed,
-                                category,
-)
-                        )
+                                category))
                         )
                     } yield trasformed
 

@@ -214,7 +214,7 @@ def feedTrasformationTemplate(metaCatalog: MetaCatalog, category :JsValue): Read
     }
 
   )
-  
+
 
 
 }
