@@ -58,7 +58,7 @@ import akka.stream.ConnectionException
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-                                                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                            
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -191,7 +191,7 @@ package catalog_manager.yaml {
 
                 futureResponses.flatMap {
                     case Right(s) => DeleteCatalog200(s)
-                    case Left(e) => rollBackCatalog(catalogToDelete.get); DeleteCatalog500(e)
+                    case Left(e) => futureResponseMongo.map{ res => if(res.isRight)rollBackCatalog(catalogToDelete.get) }; DeleteCatalog500(e)
                 }
             }
 //          NotImplementedYet
