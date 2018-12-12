@@ -1,0 +1,268 @@
+{
+  "dcatapit": {
+    "privatex": true,
+    "name": "test_derived",
+    "title": "test derived",
+    "author": "luca_test",
+    "identifier": "test_derived",
+    "alternate_identifier": "test_derived",
+    "notes": "test derived",
+    "theme": "ENVI",
+    "publisher_name": "new_org2",
+    "publisher_identifier": "new_org2",
+    "modified": "06/12/2018",
+    "holder_name": "new_org2",
+    "holder_identifier": "new_org2",
+    "license_id": "Creative Commons Attribuzione Italia 3.0 (CC BY 3.0 IT)",
+    "organization": {
+      "name": "new_org2"
+    },
+    "owner_org": "new_org2",
+    "frequency": "0 */3 * ? * *",
+    "groups": [],
+    "resources": [],
+    "relationships_as_object": [],
+    "relationships_as_subject": [],
+    "tags": []
+  },
+  "dataschema": {
+    "avro": {
+      "namespace": "daf://new_org2/ENVI/undefined",
+      "name": "test derived",
+      "aliases": [
+        "test derived"
+      ],
+      "fields": [
+        {
+          "name": "cap",
+          "`type`": "string"
+        },
+        {
+          "name": "civico",
+          "`type`": "string"
+        },
+        {
+          "name": "comune",
+          "`type`": "string"
+        },
+        {
+          "name": "col1",
+          "`type`": "string"
+        },
+        {
+          "name": "indirizzo",
+          "`type`": "string"
+        },
+        {
+          "name": "insegna",
+          "`type`": "string"
+        },
+        {
+          "name": "note",
+          "`type`": "string"
+        },
+        {
+          "name": "numero",
+          "`type`": "string"
+        },
+        {
+          "name": "processing_dttm",
+          "`type`": "string"
+        }
+      ],
+      "`type`": "record"
+    },
+    "kyloSchema": "{\"name\":null,\"description\":null,\"charset\":null,\"properties\":{},\"fields\":[{\"sampleValues\":[\"38054\",\"38035\",\"38086\",\"38017\",\"38064\",\"38050\",\"38065\",\"38028\",\"38035\",\"38050\"],\"name\":\"cap\",\"description\":\"\",\"nativeDataType\":\"string\",\"derivedDataType\":\"string\",\"primaryKey\":false,\"nullable\":true,\"modifiable\":true,\"dataTypeDescriptor\":{\"numeric\":false,\"date\":false,\"complex\":false},\"updatedTracker\":false,\"precisionScale\":null,\"createdTracker\":false,\"tags\":null,\"dataTypeWithPrecisionAndScale\":\"string\",\"descriptionWithoutNewLines\":\"\"},{\"sampleValues\":[\"133\",\"23\",\"1\",\"10\",\" 53 Serrada di Folgaria\",\"1\",\"16\",\"4\",\"8\",\"20\"],\"name\":\"civico\",\"description\":\"\",\"nativeDataType\":\"string\",\"derivedDataType\":\"string\",\"primaryKey\":false,\"nullable\":true,\"modifiable\":true,\"dataTypeDescriptor\":{\"numeric\":false,\"date\":false,\"complex\":false},\"updatedTracker\":false,\"precisionScale\":null,\"createdTracker\":false,\"tags\":null,\"dataTypeWithPrecisionAndScale\":\"string\",\"descriptionWithoutNewLines\":\"\"},{\"sampleValues\":[\"Primiero San Martino di Castrozza\",\"Moena\",\"Pinzolo\",\"Mezzolombardo\",\"Folgaria\",\"Imer\",\"Mori\",\"Revò\",\"Moena\",\"Castelnuovo\"],\"name\":\"comune\",\"description\":\"\",\"nativeDataType\":\"string\",\"derivedDataType\":\"string\",\"primaryKey\":false,\"nullable\":true,\"modifiable\":true,\"dataTypeDescriptor\":{\"numeric\":false,\"date\":false,\"complex\":false},\"updatedTracker\":false,\"precisionScale\":null,\"createdTracker\":false,\"tags\":null,\"dataTypeWithPrecisionAndScale\":\"string\",\"descriptionWithoutNewLines\":\"\"},{\"sampleValues\":[\"San Martino di Castrozza\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"],\"name\":\"col1\",\"description\":\"\",\"nativeDataType\":\"string\",\"derivedDataType\":\"string\",\"primaryKey\":false,\"nullable\":true,\"modifiable\":true,\"dataTypeDescriptor\":{\"numeric\":false,\"date\":false,\"complex\":false},\"updatedTracker\":false,\"precisionScale\":null,\"createdTracker\":false,\"tags\":null,\"dataTypeWithPrecisionAndScale\":\"string\",\"descriptionWithoutNewLines\":\"\"},{\"sampleValues\":[\"Via Passo Rolle\",\"L Vial\",\"Via Maturi\",\"Via E. de Varda\",\"Via Martinella\",\"Via Casabianca\",\"Piazza Cal Di Ponte\",\"Via J. A. Maffei\",\"Strada Ermanno Zanoner – Canori\",\"Viale Venezia\"],\"name\":\"indirizzo\",\"description\":\"\",\"nativeDataType\":\"string\",\"derivedDataType\":\"string\",\"primaryKey\":false,\"nullable\":true,\"modifiable\":true,\"dataTypeDescriptor\":{\"numeric\":false,\"date\":false,\"complex\":false},\"updatedTracker\":false,\"precisionScale\":null,\"createdTracker\":false,\"tags\":null,\"dataTypeWithPrecisionAndScale\":\"string\",\"descriptionWithoutNewLines\":\"\"},{\"sampleValues\":[\"ESTETICA PROFUMERIA TISOT\",\"BAR SPORTHOTEL SAN VIGILIO\",\"ALIMENTARI CAOLA\",\"RISTORANTE ALBERGO AL BORGHETTO\",\"RISTORANTE BAR HOTEL MARTINELLA DI PLOTEGHER STEFANO\",\"B. & B. LEGNO DI BETTEGA GRAZIANO & C. S.N.C.\",\"BAR SANI\",\"FARMACIA SILVESTRI LUCIANA\",\"CALZATURE ZANONER\",\"SIMONETTO CARNI\"],\"name\":\"insegna\",\"description\":\"\",\"nativeDataType\":\"string\",\"derivedDataType\":\"string\",\"primaryKey\":false,\"nullable\":true,\"modifiable\":true,\"dataTypeDescriptor\":{\"numeric\":false,\"date\":false,\"complex\":false},\"updatedTracker\":false,\"precisionScale\":null,\"createdTracker\":false,\"tags\":null,\"dataTypeWithPrecisionAndScale\":\"string\",\"descriptionWithoutNewLines\":\"\"},{\"sampleValues\":[\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"],\"name\":\"note\",\"description\":\"\",\"nativeDataType\":\"string\",\"derivedDataType\":\"string\",\"primaryKey\":false,\"nullable\":true,\"modifiable\":true,\"dataTypeDescriptor\":{\"numeric\":false,\"date\":false,\"complex\":false},\"updatedTracker\":false,\"precisionScale\":null,\"createdTracker\":false,\"tags\":null,\"dataTypeWithPrecisionAndScale\":\"string\",\"descriptionWithoutNewLines\":\"\"},{\"sampleValues\":[\"662\",\"194\",\"700\",\"366\",\"76\",\"277\",\"147\",\"205\",\"195\",\"579\"],\"name\":\"numero\",\"description\":\"\",\"nativeDataType\":\"string\",\"derivedDataType\":\"string\",\"primaryKey\":false,\"nullable\":true,\"modifiable\":true,\"dataTypeDescriptor\":{\"numeric\":false,\"date\":false,\"complex\":false},\"updatedTracker\":false,\"precisionScale\":null,\"createdTracker\":false,\"tags\":null,\"dataTypeWithPrecisionAndScale\":\"string\",\"descriptionWithoutNewLines\":\"\"},{\"sampleValues\":[\"1533648601938\",\"1533648601938\",\"1533648601938\",\"1533648601938\",\"1533648601938\",\"1533648601938\",\"1533648601938\",\"1533648601938\",\"1533648601938\",\"1533648601938\"],\"name\":\"processing_dttm\",\"description\":\"\",\"nativeDataType\":\"string\",\"derivedDataType\":\"string\",\"primaryKey\":false,\"nullable\":true,\"modifiable\":true,\"dataTypeDescriptor\":{\"numeric\":false,\"date\":false,\"complex\":false},\"updatedTracker\":false,\"precisionScale\":null,\"createdTracker\":false,\"tags\":null,\"dataTypeWithPrecisionAndScale\":\"string\",\"descriptionWithoutNewLines\":\"\"}],\"schemaName\":null,\"databaseName\":null,\"hiveFormat\":\"ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe' STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.IgnoreKeyTextOutputFormat'\",\"structured\":true,\"serdeTableProperties\":null,\"id\":null}",
+    "flatSchema": [
+      {
+        "name": "cap",
+        "`type`": "string",
+        "metadata": {
+          "type": "string",
+          "desc": "",
+          "tag": [],
+          "format_std": {
+            "conv": []
+          },
+          "semantics": {
+            "id": ""
+          },
+          "field_profile": {},
+          "personal": {}
+        }
+      },
+      {
+        "name": "civico",
+        "`type`": "string",
+        "metadata": {
+          "type": "string",
+          "desc": "",
+          "tag": [],
+          "format_std": {
+            "conv": []
+          },
+          "semantics": {
+            "id": ""
+          },
+          "field_profile": {},
+          "personal": {}
+        }
+      },
+      {
+        "name": "comune",
+        "`type`": "string",
+        "metadata": {
+          "type": "string",
+          "desc": "",
+          "tag": [],
+          "format_std": {
+            "conv": []
+          },
+          "semantics": {
+            "id": ""
+          },
+          "field_profile": {},
+          "personal": {}
+        }
+      },
+      {
+        "name": "col1",
+        "`type`": "string",
+        "metadata": {
+          "type": "string",
+          "desc": "",
+          "tag": [],
+          "format_std": {
+            "conv": []
+          },
+          "semantics": {
+            "id": ""
+          },
+          "field_profile": {},
+          "personal": {}
+        }
+      },
+      {
+        "name": "indirizzo",
+        "`type`": "string",
+        "metadata": {
+          "type": "string",
+          "desc": "",
+          "tag": [],
+          "format_std": {
+            "conv": []
+          },
+          "semantics": {
+            "id": ""
+          },
+          "field_profile": {},
+          "personal": {}
+        }
+      },
+      {
+        "name": "insegna",
+        "`type`": "string",
+        "metadata": {
+          "type": "string",
+          "desc": "",
+          "tag": [],
+          "format_std": {
+            "conv": []
+          },
+          "semantics": {
+            "id": ""
+          },
+          "field_profile": {},
+          "personal": {}
+        }
+      },
+      {
+        "name": "note",
+        "`type`": "string",
+        "metadata": {
+          "type": "string",
+          "desc": "",
+          "tag": [],
+          "format_std": {
+            "conv": []
+          },
+          "semantics": {
+            "id": ""
+          },
+          "field_profile": {},
+          "personal": {}
+        }
+      },
+      {
+        "name": "numero",
+        "`type`": "string",
+        "metadata": {
+          "type": "string",
+          "desc": "",
+          "tag": [],
+          "format_std": {
+            "conv": []
+          },
+          "semantics": {
+            "id": ""
+          },
+          "field_profile": {},
+          "personal": {}
+        }
+      },
+      {
+        "name": "processing_dttm",
+        "`type`": "string",
+        "metadata": {
+          "type": "string",
+          "desc": "",
+          "tag": [],
+          "format_std": {
+            "conv": []
+          },
+          "semantics": {
+            "id": ""
+          },
+          "field_profile": {},
+          "personal": {}
+        }
+      }
+    ]
+  },
+  "operational": {
+    "group_own": "new_org2",
+    "acl": [],
+    "theme": "ENVI",
+    "subtheme": "policy",
+    "input_src" : {},
+    "dataset_proc": {
+      "merge_strategy": "sync",
+      "scheduling_strategy": "TIMER_DRIVEN",
+      "cron": "undefined undefined",
+      "dataset_type": "batch",
+      "read_type": "last_update"
+    },
+    "type_info": {
+      "dataset_type": "derived_sql",
+      "query": "{\"limit\":25}",
+      "sources": [
+        "{\"name\":\"botteghe_trento\",\"owner_org\":\"new_org2\"}"
+      ]
+    },
+    "read_type": "last_update",
+    "storage_info": {
+      "hdfs": {
+        "name": "hdfs_daf"
+      }
+    },
+    "dataset_type": "batch",
+    "is_vocabulary": false,
+    "is_std": false,
+    "ingestion_pipeline": [
+      {
+        "nome": "DAF Ingestion Pipeline default",
+        "parametro": ""
+      }
+    ]
+  }
+}
