@@ -791,6 +791,7 @@ package catalog_manager.yaml {
                 if (feed.operational.type_info.isDefined && feed.operational.type_info.get.dataset_type.equals("derived_sql")) {
                     logger.info("feed started")
 
+                    logger.info("QUI CI PASSO ALMENO")
                     val streamKyloTemplate = new FileInputStream(Environment.simple().getFile("/data/kylo/template_trasformation.json"))
 
                     val kyloTemplate = try {
@@ -799,9 +800,39 @@ package catalog_manager.yaml {
                         streamKyloTemplate.close()
                     }
 
-                  //  KyloTrasformers.feedTrasformationTemplate(fe)
+                    val categoryFuture = kylo.categoryFuture(feed)
+                    val kyloSchema = feed.dataschema.kyloSchema.get
+                    val inferJson = Json.parse(kyloSchema)
 
-                    StartKyloFedd401(Error("Feed not created", Option(401), None))
+                    val feedCreation = ws.url(KYLOURL + "/api/v1/feedmgr/feeds")
+                      .withAuth(KYLOUSER, KYLOPWD, WSAuthScheme.BASIC)
+
+                    val feedData = for {
+
+                        category <- categoryFuture
+                        trasformed <- Future(kyloTemplate.transform(
+                            KyloTrasformers.feedTrasformationTemplate(feed,
+                                category,
+)
+                        )
+                        )
+                    } yield trasformed
+
+                    val createFeed: Future[WSResponse] = feedData.flatMap {
+                        case s: JsSuccess[JsValue] => logger.debug(Json.stringify(s.get)); feedCreation.post(s.get)
+                        case e: JsError => throw new Exception(JsError.toJson(e).toString())
+                    }
+
+                    createFeed onComplete (r => Logger.logger.debug(s"kyloResp: ${r.get.status}"))
+
+                    val result = createFeed.flatMap {
+                        // Assuming status 200 (OK) is a valid result for you.
+                        case resp: WSResponse if resp.status == 200 => logger.debug(Json.stringify(resp.json)); StartKyloFedd200(yaml.Success("Feed started", Option(resp.body)))
+                        case _ => StartKyloFedd401(Error("Feed not created", Option(401), None))
+                    }
+
+                    result
+
                 } else {
 
 
