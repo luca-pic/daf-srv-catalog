@@ -191,7 +191,7 @@ package catalog_manager.yaml {
 
                 futureResponses.flatMap {
                     case Right(s) => DeleteCatalog200(s)
-                    case Left(e) => rollBackCatalog(catalogToDelete.get); DeleteCatalog500(e)
+                    case Left(e) => futureResponseMongo.map{ res => if(res.isRight)rollBackCatalog(catalogToDelete.get) }; DeleteCatalog500(e)
                 }
             }
 //          NotImplementedYet

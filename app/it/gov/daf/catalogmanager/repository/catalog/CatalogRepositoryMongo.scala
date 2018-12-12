@@ -153,7 +153,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     widgetsResp.map{ res =>
       if(res.status == 200 && !res.body.equals("[]")) Left(Error(s"is not possible delete catalog $nameCatalog, it has some widgets", Some(403), None))
       else if(res.status == 200) {
-        val query = $and(MongoDBObject("dcatapit.name" -> nameCatalog), MongoDBObject("dcatapit.author" -> user), "operational.acl.groupName" $exists  false)
+        val query = $and(MongoDBObject("dcatapit.name" -> nameCatalog), MongoDBObject("dcatapit.author" -> user), "operational.acl.groupName" $exists false)
         val mongoClient = MongoClient(server, List(credentials))
         val db = mongoClient(source)
         val coll = db("catalog_test")

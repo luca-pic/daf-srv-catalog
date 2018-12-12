@@ -49,13 +49,10 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
         disableFeed(idFeed)
           .flatMap{_ => delete(idFeed)
             .map{res =>
-              if(res.status == 204) {
-                Logger.logger.debug(s"$user deleted $feedName")
-                Right(Success(s"$feedName deleted", None))
-              }
-              else{
-                Logger.logger.debug(s"$user not deleted $feedName")
-                Left(Error(s"kylo feed $feedName ${res.statusText}", Some(res.status), None))
+              res.status match {
+                case 204 => Logger.logger.debug(s"$user deleted $feedName");     Right(Success(s"$feedName deleted", None))
+                case 404 => Logger.logger.debug(s"$feedName not found");         Right(Success(s"$feedName not found", None))
+                case _   => Logger.logger.debug(s"$user not deleted $feedName"); Left(Error(s"kylo feed $feedName ${res.statusText}", Some(res.status), None))
               }
             }
           }
