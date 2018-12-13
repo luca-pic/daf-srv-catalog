@@ -1,0 +1,4 @@
+[ { name = "config-volume", mountPath = "/opt/docker/conf/mnt",  subPath = None Text, readOnly = None Bool }
+, { name = "catalog-manager-logback-volume", mountPath = "/opt/docker/conf/logback.xml", subPath = Some "logback.xml", readOnly = None Bool }
+, { name = "krb5conf", mountPath = "/etc/krb5.conf", subPath = None Text, readOnly = Some True }
+]
