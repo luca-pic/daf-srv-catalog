@@ -389,17 +389,6 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     response
   }
 
-  def getLinkedDatasets(datasetName: String, datasetDerivedName: List[String], tags: List[String]) = {
-
-    Logger.logger.debug(s"elasticsearchUrl: $elasticsearchUrl elasticsearchPort: $elasticsearchPort")
-
-    val client = HttpClient(ElasticsearchClientUri(elasticsearchUrl, elasticsearchPort))
-    val index = "ckan"
-    val searchType = "catalog_test"
-    val datasetTags = "dcatapit.tags.name.keyword"
-
-
-  }
 
 
 }
