@@ -14,7 +14,6 @@ import com.sksamuel.elastic4s.http.search.SearchResponse
 import com.sksamuel.elastic4s.ElasticsearchClientUri
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.http.HttpClient
-import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future
 
@@ -153,7 +152,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     widgetsResp.map{ res =>
       if(res.status == 200 && !res.body.equals("[]")) Left(Error(s"is not possible delete catalog $nameCatalog, it has some widgets", Some(403), None))
       else if(res.status == 200) {
-        val query = $and(MongoDBObject("dcatapit.name" -> nameCatalog), MongoDBObject("dcatapit.author" -> user), "operational.acl.groupName" $exists  false)
+        val query = $and(MongoDBObject("dcatapit.name" -> nameCatalog), MongoDBObject("dcatapit.author" -> user), "operational.acl.groupName" $exists false)
         val mongoClient = MongoClient(server, List(credentials))
         val db = mongoClient(source)
         val coll = db("catalog_test")
@@ -360,7 +359,6 @@ class CatalogRepositoryMongo extends  CatalogRepository{
   }
 
   def getTag: Future[Seq[String]] = {
-    import scala.concurrent.ExecutionContext.Implicits._
 
     Logger.logger.debug(s"elasticsearchUrl: $elasticsearchUrl elasticsearchPort: $elasticsearchPort")
 
@@ -390,6 +388,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
 
     response
   }
+
 
 
 }

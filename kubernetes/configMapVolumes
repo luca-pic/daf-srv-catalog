@@ -1,0 +1,3 @@
+[ { name = "catalog-manager-logback-volume", configMap = "catalog-manager-logback" }
+, { name = "config-volume",                  configMap = "catalog-manager-conf" }
+]
