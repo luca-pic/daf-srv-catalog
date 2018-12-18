@@ -1,7 +1,7 @@
 package it.gov.daf.catalogmanager.service
 
 
-import catalog_manager.yaml.{Dataset, DatasetNameFields, Error, MetaCatalog, MetadataCat, Success}
+import catalog_manager.yaml.{Dataset, DatasetNameFields, Error, LinkedDataset, LinkedParams, MetaCatalog, MetadataCat, Success}
 import it.gov.daf.catalogmanager.repository.catalog.CatalogRepositoryComponent
 import play.api.libs.json.JsValue
 
@@ -69,5 +69,8 @@ trait CatalogServiceComponent {
       catalogRepository.getFieldsVoc
     }
 
+    def getLinkedDatasets(datasetName: String, linkedParam: Option[LinkedParams], user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]] = {
+      catalogRepository.getLinkedDatasets(datasetName, linkedParam, user, groups, limit)
+    }
   }
 }

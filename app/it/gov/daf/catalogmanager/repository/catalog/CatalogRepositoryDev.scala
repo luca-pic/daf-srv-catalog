@@ -135,4 +135,7 @@ class CatalogRepositoryDev extends CatalogRepository{
   def getTag: Future[Seq[String]] = Future.successful(Seq[String]())
 
   def getFieldsVoc: Future[Seq[DatasetNameFields]] = Future.successful(Seq[DatasetNameFields]())
+
+  def getLinkedDatasets(datasetName: String, linkedParam: Option[LinkedParams], user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]] =
+    Future.successful(Seq[LinkedDataset]())
 }

@@ -434,6 +434,47 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
+  "/catalog-ds/linked/{name}":
+    post:
+      tags:
+        - DatasetCatalog
+      description: return linked dataset
+      operationId: getLinkedDataset
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+      - name: name
+        in: path
+        description: the name of the dataset
+        required: true
+        type: string
+      - name: limit
+        in: query
+        required: false
+        type: integer
+        format: int32
+      - name: linkedParam
+        in: body
+        required: false
+        schema:
+          $ref: '#/definitions/LinkedParams'
+      responses:
+        200:
+          description: Success
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/LinkedDataset'
+        401:
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
   "/kafka/notifications/add":
     post:
       tags:
@@ -2582,3 +2623,22 @@ definitions:
     properties:
       catalog:
         type: string
+  LinkedParams:
+    type: object
+    required:
+      - derivedName
+    properties:
+      tags:
+        type: array
+        items:
+          type: string
+  LinkedDataset:
+    type: object
+    required:
+      - catalog_type
+      - catalog
+    properties:
+      catalog_type:
+        type: string
+      catalog:
+        $ref: '#/definitions/MetaCatalog'

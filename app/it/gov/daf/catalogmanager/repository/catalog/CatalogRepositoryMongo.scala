@@ -1,6 +1,6 @@
 package it.gov.daf.catalogmanager.repository.catalog
 
-import catalog_manager.yaml.{Dataset, DatasetNameFields, Error, MetaCatalog, MetadataCat, ResponseWrites, Success}
+import catalog_manager.yaml.{Dataset, DatasetNameFields, Error, LinkedDataset, LinkedParams, MetaCatalog, MetadataCat, ResponseWrites, Success}
 import com.mongodb
 import com.mongodb.DBObject
 import com.mongodb.casbah.MongoClient
@@ -389,6 +389,39 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     response
   }
 
+  def getLinkedDatasets(datasetName: String, linkedParam: Option[LinkedParams], user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]] = {
+    import catalog_manager.yaml.BodyReads.MetaCatalogReads
+
+    Logger.logger.debug(s"elasticsearchUrl: $elasticsearchUrl elasticsearchPort: $elasticsearchPort")
+
+    val client = HttpClient(ElasticsearchClientUri(elasticsearchUrl, elasticsearchPort))
+    val index = "ckan"
+    val searchType = "catalog_test"
+    val sourceField = "operational.type_info.sources"
+
+    def queryElasticsearch(searchTypeInQuery: String, fieldValue: String, limitResult: Int) = {
+      search(index).types(searchTypeInQuery).query(
+        boolQuery()
+          must(
+            must(matchQuery(sourceField, fieldValue))
+            should(
+              must(termQuery("dcatapit.privatex", true), matchQuery("operational.acl.groupName", groups.mkString(" ")).operator("OR")),
+              must(termQuery("dcatapit.privatex", true), termQuery("dcatapit.author", user)),
+              termQuery("dcatapit.privatex", false),
+              termQuery("private", false)
+            )
+          )
+      ).limit(limitResult)
+    }
+
+    client.execute(queryElasticsearch(searchType, datasetName, limit.getOrElse(1000))).map { res =>
+      res.hits.hits.map{ source =>
+        MetaCatalogReads.reads(Json.parse(source.sourceAsString)) match {
+          case JsSuccess(value, _) => LinkedDataset("derived", value)
+        }
+      }.toSeq
+    }
+  }
 
 
 }
