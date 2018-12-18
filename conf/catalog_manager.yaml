@@ -1872,7 +1872,9 @@ definitions:
         type: array
         items:
           type: string
-      query:
+      query_sql:
+        type: string
+      query_json:
         type: string
   IngestionPipeline:
     type: object
