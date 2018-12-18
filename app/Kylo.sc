@@ -22,6 +22,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 
+//"dataTransformScript": "import org.apache.spark.sql._\nvar df = sqlContext.sql(\"SELECT tbl10.`comune`, tbl10.`insegna` FROM `tran__marittimo`.`new_org2_o_botteghe_trento` tbl10\")\ndf = df\ndf\n",
+//"sql": "SELECT tbl10.`comune`, tbl10.`insegna` FROM `tran__marittimo`.`new_org2_o_botteghe_trento` tbl10",
+
+
+
 
 val streamKyloTemplate = new FileInputStream("/Users/ale/Development/teamdigitale/code/daf-backend/daf-srv-catalog/data/kylo/template_trasformation.json")
 
