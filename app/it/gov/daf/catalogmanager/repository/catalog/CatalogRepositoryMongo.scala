@@ -14,7 +14,6 @@ import com.sksamuel.elastic4s.http.search.SearchResponse
 import com.sksamuel.elastic4s.ElasticsearchClientUri
 import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.http.HttpClient
-import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future
 
@@ -360,7 +359,6 @@ class CatalogRepositoryMongo extends  CatalogRepository{
   }
 
   def getTag: Future[Seq[String]] = {
-    import scala.concurrent.ExecutionContext.Implicits._
 
     Logger.logger.debug(s"elasticsearchUrl: $elasticsearchUrl elasticsearchPort: $elasticsearchPort")
 
@@ -390,6 +388,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
 
     response
   }
+
 
 
 }
