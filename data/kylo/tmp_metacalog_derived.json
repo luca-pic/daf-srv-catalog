@@ -244,7 +244,8 @@
     },
     "type_info": {
       "dataset_type": "derived_sql",
-      "query": "{\"limit\":25}",
+      "query_sql" : "SELECT Insegna, Comune FROM tran__marittimo.new_org2_o_botteghe_trento AS T1 ",
+      "query_json" : "{\"select\":[{\"name\":\"Insegna\"},{\"name\":\"Comune\"}]}",
       "sources": [
         "{\"name\":\"botteghe_trento\",\"owner_org\":\"new_org2\"}"
       ]
