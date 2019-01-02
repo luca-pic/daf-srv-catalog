@@ -389,7 +389,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     response
   }
 
-  def getLinkedDatasets(datasetName: String, linkedParam: LinkedParams, user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]] = {
+  def getLinkedDatasets(datasetName: String, linkedParams: LinkedParams, user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]] = {
     import catalog_manager.yaml.BodyReads.MetaCatalogReads
 
     Logger.logger.debug(s"elasticsearchUrl: $elasticsearchUrl elasticsearchPort: $elasticsearchPort")
@@ -426,7 +426,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     }
 
     def getSourcesDataset = {
-      client.execute(queryElastic(searchType, querySourcesFieldName, linkedParam.sourceName.mkString(" "), limit)).map { res =>
+      client.execute(queryElastic(searchType, querySourcesFieldName, linkedParams.sourcesName.mkString(" "), limit)).map { res =>
         res.hits.hits.map { source =>
           MetaCatalogReads.reads(Json.parse(source.sourceAsString)) match {
             case JsSuccess(value, _) => LinkedDataset("source", value)

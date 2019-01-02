@@ -26,7 +26,7 @@ trait CatalogRepository {
     def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetNameFields]]
     def getTag: Future[Seq[String]]
     def getFieldsVoc: Future[Seq[DatasetNameFields]]
-    def getLinkedDatasets(datasetName: String, linkedParam: LinkedParams, user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]]
+    def getLinkedDatasets(datasetName: String, linkedParams: LinkedParams, user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]]
 
 
     // DO NOT DELETE
