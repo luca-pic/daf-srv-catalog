@@ -455,9 +455,9 @@ paths:
         required: false
         type: integer
         format: int32
-      - name: linkedParam
+      - name: linkedParams
         in: body
-        required: false
+        required: true
         schema:
           $ref: '#/definitions/LinkedParams'
       responses:
@@ -2626,9 +2626,9 @@ definitions:
   LinkedParams:
     type: object
     required:
-      - derivedName
+      - sourcesName
     properties:
-      tags:
+      sourcesName:
         type: array
         items:
           type: string
