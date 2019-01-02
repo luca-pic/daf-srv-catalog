@@ -119,6 +119,36 @@ object KyloTrasformers {
 
   }
 
+  def querySqlToSparkSnippet(metaCatalog: MetaCatalog) :(String, String) = {
+    val specialChar = "`"
+    val querySql = metaCatalog.operational.type_info.get.query_sql.get
+    val queryJson: JsValue = Json.parse(metaCatalog.operational.type_info.get.query_json.get)
+    val selectFields: Seq[JsValue] = (queryJson \\ "name")
+    var query: String = querySql.replace("T1", "tbl10")
+    val selects = selectFields.map(x => {
+      val oldField = x.as[String]
+      val lower = "tbl10." + specialChar + oldField.toLowerCase + specialChar
+      query = query.replace(oldField, lower)
+      lower
+    })
+    val sourcesJson = metaCatalog.operational.type_info.get.sources.get
+    println(querySql)
+    val startingIndex = querySql.split("\\.")
+    val db = startingIndex(0).substring(startingIndex(0).lastIndexOf(" ") + 1,
+      startingIndex(0).length)
+    val table = startingIndex(1).substring(0,
+      startingIndex(1).indexOf(" "))
+
+    val from = specialChar + db + specialChar + "." +
+      specialChar + table + specialChar
+
+    val startTrasformSql = """import org.apache.spark.sql._\nvar df = sqlContext.sql(\""""
+    val endTrasformSql = """\")\ndf = df\ndf\n"""
+
+    query = query.replace(db + "." + table, from)
+    (query, startTrasformSql + query + endTrasformSql)
+  }
+
   //id: "efc036fe-ef47-42a6-bb00-7067efb358a5",
   //name: "DAF Category",
   //systemName: "daf_category"
@@ -263,6 +293,10 @@ object KyloTrasformers {
 
       }
 
+    ) andThen (__ \ "dataTransformation").json.update(
+      (__ \ "sql").json.put(JsString(querySqlToSparkSnippet(metaCatalog)._1)) and
+        (__ \ "dataTransformScript").json.put(JsString(querySqlToSparkSnippet(metaCatalog)._2))
+    reduce
     )
   }
 }
