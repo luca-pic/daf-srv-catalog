@@ -304,6 +304,6 @@
 
     def getFieldsVoc: Future[Seq[DatasetNameFields]] = Future.successful(Seq[DatasetNameFields]())
 
-    def getLinkedDatasets(datasetName: String, linkedParam: Option[LinkedParams], user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]] =
+    def getLinkedDatasets(datasetName: String, linkedParam: LinkedParams, user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]] =
       Future.successful(Seq[LinkedDataset]())
   }

@@ -389,7 +389,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     response
   }
 
-  def getLinkedDatasets(datasetName: String, linkedParam: Option[LinkedParams], user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]] = {
+  def getLinkedDatasets(datasetName: String, linkedParam: LinkedParams, user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]] = {
     import catalog_manager.yaml.BodyReads.MetaCatalogReads
 
     Logger.logger.debug(s"elasticsearchUrl: $elasticsearchUrl elasticsearchPort: $elasticsearchPort")
@@ -397,13 +397,14 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     val client = HttpClient(ElasticsearchClientUri(elasticsearchUrl, elasticsearchPort))
     val index = "ckan"
     val searchType = "catalog_test"
-    val sourceField = "operational.type_info.sources"
+    val queryDerivedFieldName = "operational.type_info.sources"
+    val querySourcesFieldName = "dcatapit.name"
 
-    def queryElasticsearch(searchTypeInQuery: String, fieldValue: String, limitResult: Int) = {
+    def queryElastic(searchTypeInQuery: String, fieldName: String, fieldValue: String, limitResult: Option[Int]) = {
       search(index).types(searchTypeInQuery).query(
         boolQuery()
           must(
-            must(matchQuery(sourceField, fieldValue))
+            must(matchQuery(fieldName, fieldValue))
             should(
               must(termQuery("dcatapit.privatex", true), matchQuery("operational.acl.groupName", groups.mkString(" ")).operator("OR")),
               must(termQuery("dcatapit.privatex", true), termQuery("dcatapit.author", user)),
@@ -411,16 +412,33 @@ class CatalogRepositoryMongo extends  CatalogRepository{
               termQuery("private", false)
             )
           )
-      ).limit(limitResult)
+      ).limit(limitResult.getOrElse(1000))
     }
 
-    client.execute(queryElasticsearch(searchType, datasetName, limit.getOrElse(1000))).map { res =>
-      res.hits.hits.map{ source =>
-        MetaCatalogReads.reads(Json.parse(source.sourceAsString)) match {
-          case JsSuccess(value, _) => LinkedDataset("derived", value)
-        }
-      }.toSeq
+    def getDerivedDataset = {
+      client.execute(queryElastic(searchType, queryDerivedFieldName, datasetName, limit)).map { res =>
+        res.hits.hits.map { source =>
+          MetaCatalogReads.reads(Json.parse(source.sourceAsString)) match {
+            case JsSuccess(value, _) => LinkedDataset("derived", value)
+          }
+        }.toList
+      }
     }
+
+    def getSourcesDataset = {
+      client.execute(queryElastic(searchType, querySourcesFieldName, linkedParam.sourceName.mkString(" "), limit)).map { res =>
+        res.hits.hits.map { source =>
+          MetaCatalogReads.reads(Json.parse(source.sourceAsString)) match {
+            case JsSuccess(value, _) => LinkedDataset("source", value)
+          }
+        }.toList
+      }
+    }
+
+    for{
+      sourcesDataset <- getSourcesDataset
+      derivedDataset <- getDerivedDataset
+    } yield sourcesDataset ::: derivedDataset
   }
 
 

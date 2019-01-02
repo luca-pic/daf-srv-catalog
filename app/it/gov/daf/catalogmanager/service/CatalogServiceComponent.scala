@@ -69,7 +69,7 @@ trait CatalogServiceComponent {
       catalogRepository.getFieldsVoc
     }
 
-    def getLinkedDatasets(datasetName: String, linkedParam: Option[LinkedParams], user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]] = {
+    def getLinkedDatasets(datasetName: String, linkedParam: LinkedParams, user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]] = {
       catalogRepository.getLinkedDatasets(datasetName, linkedParam, user, groups, limit)
     }
   }

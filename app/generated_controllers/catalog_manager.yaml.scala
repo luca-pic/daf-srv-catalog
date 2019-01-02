@@ -58,7 +58,7 @@ import akka.stream.ConnectionException
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-                                                                    
+                                                                                        
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -592,7 +592,7 @@ package catalog_manager.yaml {
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.voc_daf2dcatsubtheme
         }
-        val getLinkedDataset = getLinkedDatasetAction { input: (String, MetadataRequired, Catalog_dsLinkedNamePostLinkedParam) =>
+        val getLinkedDataset = getLinkedDatasetAction { input: (String, MetadataRequired, LinkedParams) =>
             val (name, limit, linkedParam) = input
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.getLinkedDataset
             RequestContext.execInContext[Future[GetLinkedDatasetType[T] forSome { type T }]]("getLinkedDataset") { () =>
