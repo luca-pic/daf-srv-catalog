@@ -297,6 +297,8 @@ object KyloTrasformers {
       (__ \ "sql").json.put(JsString(querySqlToSparkSnippet(metaCatalog)._1)) and
         (__ \ "dataTransformScript").json.put(JsString(querySqlToSparkSnippet(metaCatalog)._2))
     reduce
+    )  andThen (__ \ 'userProperties).json.update(
+      of[JsArray].map{ case JsArray(arr) => buildUserProperties(arr, metaCatalog, "derived") }
     )
   }
 }
