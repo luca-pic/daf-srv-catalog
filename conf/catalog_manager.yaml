@@ -572,6 +572,39 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
+  "/nifi/start/{orgName}/{datasetName}":
+    get:
+      tags:
+        - Nifi
+      description: start nifi processor
+      operationId: startNifiProcessor
+      produces:
+      - application/json
+      parameters:
+      - name: orgName
+        in: path
+        description: the name of the organization
+        required: true
+        type: string
+      - name: datasetName
+        in: path
+        description: the name of the dataset
+        required: true
+        type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            type: object
+            $ref: '#/definitions/Success'
+        500:
+          description: Error Message
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
   "/ckan/create/organization":
     post:
       #security:
