@@ -50,6 +50,8 @@ import play.api.mvc.Headers
 import it.gov.daf.common.utils.RequestContext
 import java.lang
 import akka.stream.ConnectionException
+import it.gov.daf.catalogmanager.nifi.Nifi
+import it.gov.daf.catalogmanager
 
 /**
  * This controller is re-generated after each change in the specification.
@@ -58,13 +60,14 @@ import akka.stream.ConnectionException
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-                                                                                                        
+                                                                                                                                                                                                                    
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
 
         ingestionListener : IngestionListenerImpl,
         val kylo :Kylo,
+        val Nifi: Nifi,
         val configuration: Configuration,
         val playSessionStore: PlaySessionStore,
         val ws: WSClient,
@@ -368,6 +371,17 @@ package catalog_manager.yaml {
             }
             // NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.standardsuri
+        }
+        val startNifiProcessor = startNifiProcessorAction { input: (String, String) =>
+            val (orgName, datasetName) = input
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.startNifiProcessor
+            RequestContext.execInContext[Future[StartNifiProcessorType[T] forSome { type T }]]("startNifiProcessor") { () =>
+              Nifi.startDerivedProcessor(orgName, s"${orgName}_o_${datasetName}") flatMap {
+                case Right(success) => StartNifiProcessor200(success)
+                case Left(error)    => StartNifiProcessor500(error)
+              }
+            }
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.startNifiProcessor
         }
         val datasetcatalogbyname = datasetcatalogbynameAction { (name: String) =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.datasetcatalogbyname

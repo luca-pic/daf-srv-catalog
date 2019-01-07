@@ -253,8 +253,8 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     val db = mongoClient(source)
     val coll = db("catalog_test")
 
-    val dcatapit: Dataset = metaCatalog.dcatapit
-    val datasetJs : JsValue = ResponseWrites.DatasetWrites.writes(dcatapit)
+//    val dcatapit: Dataset = metaCatalog.dcatapit
+//    val datasetJs : JsValue = ResponseWrites.DatasetWrites.writes(dcatapit)
 
 
     // TODO think if private should go in ckan or not as backup of metadata
