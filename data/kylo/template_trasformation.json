@@ -372,7 +372,7 @@
     "chartViewModel": {},
     "datasourceIds": [],
     "datasources": null,
-    "dataTransformScript": "import org.apache.spark.sql._\nvar df = sqlContext.sql(\"SELECT tbl10.`comune`, tbl10.`insegna` FROM `tran__marittimo`.`new_org2_o_botteghe_trento` tbl10\")\ndf = df\ndf\n",
+    "dataTransformScript": "import org.apache.spark.sql._ var df = sqlContext.sql(\"SELECT tbl10.`comune`, tbl10.`insegna` FROM `tran__marittimo`.`new_org2_o_botteghe_trento` tbl10\") df = df df ",
     "sql": "SELECT tbl10.`comune`, tbl10.`insegna` FROM `tran__marittimo`.`new_org2_o_botteghe_trento` tbl10",
     "states": [
     ],
