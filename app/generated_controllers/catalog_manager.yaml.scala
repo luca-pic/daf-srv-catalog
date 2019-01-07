@@ -17,7 +17,6 @@ import scala.util._
 
 import javax.inject._
 
-import java.io.File
 import de.zalando.play.controllers.PlayBodyParsing._
 import it.gov.daf.catalogmanager.listeners.IngestionListenerImpl
 import it.gov.daf.catalogmanager.service.{CkanRegistry,ServiceRegistry}
@@ -31,7 +30,6 @@ import it.gov.daf.common.utils.WebServiceUtil
 import it.gov.daf.catalogmanager.service.VocServiceRegistry
 import play.api.libs.ws.WSClient
 import java.net.URLEncoder
-import it.gov.daf.catalogmanager.utilities.ConfigReader
 import play.api.libs.ws.WSResponse
 import play.api.libs.ws.WSAuthScheme
 import java.io.FileInputStream
@@ -41,17 +39,9 @@ import catalog_manager.yaml
 import it.gov.daf.catalogmanager.kylo.Kylo
 import it.gov.daf.common.sso.common.CredentialManager
 import play.api.Logger
-import yaml.ResponseWrites.MetaCatalogWrites.writes
-import play.api.mvc.Headers
-import scala.concurrent.duration._
-import scala.concurrent.Await
-import yaml.ResponseWrites.MetaCatalogWrites.writes
 import play.api.mvc.Headers
 import it.gov.daf.common.utils.RequestContext
-import java.lang
-import akka.stream.ConnectionException
 import it.gov.daf.catalogmanager.nifi.Nifi
-import it.gov.daf.catalogmanager
 
 /**
  * This controller is re-generated after each change in the specification.
@@ -60,7 +50,7 @@ import it.gov.daf.catalogmanager
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-    
+        
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml

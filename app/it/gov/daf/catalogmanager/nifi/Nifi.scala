@@ -1,17 +1,13 @@
 package it.gov.daf.catalogmanager.nifi
 
-import java.io.FileInputStream
-
 import com.google.inject.{Inject, Singleton}
 import catalog_manager.yaml.{Error, Success}
-import play.Environment
 import play.api.inject.ConfigurationProvider
 import play.api.libs.json._
 import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.Logger
 
 import scala.concurrent.Future
-import scala.util.Try
 
 @Singleton
 class Nifi @Inject()(ws :WSClient, config: ConfigurationProvider){
