@@ -142,8 +142,8 @@ object KyloTrasformers {
     val from = specialChar + db + specialChar + "." +
       specialChar + table + specialChar
 
-    val startTrasformSql = """import org.apache.spark.sql._\nvar df = sqlContext.sql(\""""
-    val endTrasformSql = """\")\ndf = df\ndf\n"""
+    val startTrasformSql = """import org.apache.spark.sql._ var df = sqlContext.sql(\""""
+    val endTrasformSql = """\") df = df df """
 
     query = query.replace(db + "." + table, from)
     (query, startTrasformSql + query + endTrasformSql)
