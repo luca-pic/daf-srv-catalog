@@ -225,7 +225,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     } else {
       val random = scala.util.Random
       val id = random.nextInt(1000).toString
-      val res: Option[MetaCatalog]= (CatalogManager.writeOrdAndStd(metaCatalog))
+      val res: Option[MetaCatalog]= (CatalogManager.writeOrdAndStdOrDerived(metaCatalog))
       val message = res match {
         case Some(meta) =>
           val json: JsValue = MetaCatalogWrites.writes(meta)
@@ -285,7 +285,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     } else {
       val random = scala.util.Random
       val id = random.nextInt(1000).toString
-      val res: Option[MetaCatalog]= (CatalogManager.writeOrdAndStd(metaCatalog))
+      val res: Option[MetaCatalog]= (CatalogManager.writeOrdAndStdOrDerived(metaCatalog))
       val message: String = res match {
         case Some(meta) =>
           val json: JsValue = MetaCatalogWrites.writes(meta)
