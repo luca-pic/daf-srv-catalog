@@ -34,7 +34,7 @@ class TmpDafUriConverter(
     case OpenData =>
       s"/daf/opendata/$dsName"
     case Derived =>
-      s"daf://derived/$theme" + "__" + s"$subTheme/$dsName"
+      s"/daf/derived/$theme" + "__" + s"$subTheme/$dsName"
   }
 
   def toLogicalUri: String = logicalUri
