@@ -53,7 +53,9 @@ object KyloTrasformers {
       systemName match {
         case "dafType" => { if (metaCatalog.operational.is_std)
                                 x + ("value" -> JsString("standard"))
-                              else
+                            else if (fileType.equals("derived"))
+                                x + ("value" -> JsString("derived"))
+                            else
                                 x + ("value" -> JsString("ordinary"))
                             }
         case "dafDomain" => x + ("value" -> JsString(metaCatalog.operational.theme))

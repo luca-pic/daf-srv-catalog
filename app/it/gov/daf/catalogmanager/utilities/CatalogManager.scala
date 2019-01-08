@@ -2,7 +2,7 @@ package it.gov.daf.catalogmanager.utilities
 
 import catalog_manager.yaml.{MetaCatalog, StdSchema}
 import it.gov.daf.catalogmanager.utilities.uri.UriDataset
-import it.gov.daf.common.utils.{DafUriConverter, OpenData, Ordinary, Standard}
+//import it.gov.daf.common.utils.{DafUriConverter, OpenData, Ordinary, Standard}
 import play.api.Logger
 import play.api.libs.json.Json
 
@@ -116,18 +116,20 @@ object CatalogManager {
   }
 
 
-  def writeOrdAndStd(metaCatalog: MetaCatalog) : Option[MetaCatalog] = {
+  def writeOrdAndStdOrDerived(metaCatalog: MetaCatalog) : Option[MetaCatalog] = {
 
     val datasetType = if (metaCatalog.operational.is_std)
       Standard
     //else if (!metaCatalog.dcatapit.privatex.getOrElse(false))
     //else if (metaCatalog.dcatapit.owner_org.get.equals("open_data"))
+    else if(metaCatalog.operational.type_info.isDefined)
+      Derived
     else if (!metaCatalog.operational.ext_opendata.isEmpty)
       OpenData
     else
       Ordinary
 
-    val datasetConverter = new DafUriConverter(
+    val datasetConverter = new TmpDafUriConverter(
       datasetType,
       metaCatalog.dcatapit.holder_identifier.get,
       metaCatalog.operational.theme,
