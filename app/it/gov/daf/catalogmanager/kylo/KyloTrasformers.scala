@@ -215,7 +215,7 @@ object KyloTrasformers {
               case "Dependent Feeds" => obj.transform(__.json.update(
                 (__ \ "values").json.update(
                   of[JsArray].map { case JsArray(arr) => {
-                    val d = arr.map((_.as[JsObject] + ("label" -> JsString("new_org2.new_org2_o_botteghe_trento")) + ("value" -> JsString("new_org2.new_org2_o_botteghe_trento"))))
+                    val d = arr.map((_.as[JsObject] + ("label" -> JsString(feedName)) + ("value" -> JsString(feed_name))))
                     JsArray(d)
                   }
                   }
@@ -238,7 +238,7 @@ object KyloTrasformers {
 
           val result: JsValue = (x.as[JsObject] +
             ("properties" -> JsArray(propsObj))) +
-            ("propertyValuesDisplayString" -> JsString(" Dependent Feeds: new_org2.new_org2_o_botteghe_trento")) +
+            ("propertyValuesDisplayString" -> JsString(" Dependent Feeds: " + feedName)) +
             ("groups" -> JsArray(trasformedGroup)) +
             ("ruleType" -> rules)
           result
@@ -289,7 +289,7 @@ object KyloTrasformers {
           Json.obj(
             "column" -> name,
             "alias" -> "tbl10",
-            "tableName" -> "tran__marittimo.new_org2_o_botteghe_trento",
+            "tableName" -> feedName,
             "tableColumn" -> name)
         })
         JsArray(result)
