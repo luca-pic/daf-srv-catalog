@@ -215,7 +215,7 @@ object KyloTrasformers {
               case "Dependent Feeds" => obj.transform(__.json.update(
                 (__ \ "values").json.update(
                   of[JsArray].map { case JsArray(arr) => {
-                    val d = arr.map((_.as[JsObject] + ("label" -> JsString(feedName)) + ("value" -> JsString(feed_name))))
+                    val d = arr.map((_.as[JsObject] + ("label" -> JsString(feedName)) + ("value" -> JsString(feedName))))
                     JsArray(d)
                   }
                   }
