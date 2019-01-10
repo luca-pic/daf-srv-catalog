@@ -1,15 +1,19 @@
 package it.gov.daf.catalogmanager.repository.catalog
 
-import catalog_manager.yaml.{Dataset, DatasetStandardFields, Error, Field, MetaCatalog, MetadataCat, ResponseWrites, Success}
+import catalog_manager.yaml.{Dataset, DatasetNameFields, Error, LinkedDataset, LinkedParams, MetaCatalog, MetadataCat, ResponseWrites, Success}
 import com.mongodb
 import com.mongodb.DBObject
 import com.mongodb.casbah.MongoClient
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import com.mongodb.casbah.Imports._
-import it.gov.daf.catalogmanager.service.CkanRegistry
+import com.sksamuel.elastic4s.http.ElasticDsl.{search, termsAgg}
 import it.gov.daf.catalogmanager.utilities.{CatalogManager, ConfigReader}
 import play.api.libs.ws.WSClient
 import play.api.Logger
+import com.sksamuel.elastic4s.http.search.SearchResponse
+import com.sksamuel.elastic4s.ElasticsearchClientUri
+import com.sksamuel.elastic4s.http.ElasticDsl._
+import com.sksamuel.elastic4s.http.HttpClient
 
 import scala.concurrent.Future
 
@@ -25,6 +29,9 @@ class CatalogRepositoryMongo extends  CatalogRepository{
   private val userName = ConfigReader.userName
   private val source = ConfigReader.database
   private val password = ConfigReader.password
+
+  private val elasticsearchUrl = ConfigReader.getElasticsearchUrl
+  private val elasticsearchPort = ConfigReader.getElasticsearchPort
 
   private val DATIPUBBLICI_HOST = ConfigReader.datipubbliciHost
 
@@ -207,7 +214,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
           val obj = com.mongodb.util.JSON.parse(json.toString()).asInstanceOf[DBObject]
           val inserted = coll.insert(obj)
           mongoClient.close()
-          val msg = meta.operational.logical_uri
+          val msg = meta.operational.logical_uri.getOrElse("")
           msg
         case _ =>
           println("Error");
@@ -218,13 +225,13 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     } else {
       val random = scala.util.Random
       val id = random.nextInt(1000).toString
-      val res: Option[MetaCatalog]= (CatalogManager.writeOrdAndStd(metaCatalog))
+      val res: Option[MetaCatalog]= (CatalogManager.writeOrdAndStdOrDerived(metaCatalog))
       val message = res match {
         case Some(meta) =>
           val json: JsValue = MetaCatalogWrites.writes(meta)
           val obj = com.mongodb.util.JSON.parse(json.toString()).asInstanceOf[DBObject]
           val inserted = coll.insert(obj)
-          val msg = meta.operational.logical_uri
+          val msg = meta.operational.logical_uri.getOrElse("")
           msg
         case _ =>
           println("Error");
@@ -246,8 +253,8 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     val db = mongoClient(source)
     val coll = db("catalog_test")
 
-    val dcatapit: Dataset = metaCatalog.dcatapit
-    val datasetJs : JsValue = ResponseWrites.DatasetWrites.writes(dcatapit)
+//    val dcatapit: Dataset = metaCatalog.dcatapit
+//    val datasetJs : JsValue = ResponseWrites.DatasetWrites.writes(dcatapit)
 
 
     // TODO think if private should go in ckan or not as backup of metadata
@@ -267,7 +274,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
           val obj = com.mongodb.util.JSON.parse(json.toString()).asInstanceOf[DBObject]
           val inserted = coll.insert(obj)
           mongoClient.close()
-          val msg = meta.operational.logical_uri
+          val msg = meta.operational.logical_uri.getOrElse("")
           msg
         case _ =>
           println("Error");
@@ -278,13 +285,13 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     } else {
       val random = scala.util.Random
       val id = random.nextInt(1000).toString
-      val res: Option[MetaCatalog]= (CatalogManager.writeOrdAndStd(metaCatalog))
-      val message = res match {
+      val res: Option[MetaCatalog]= (CatalogManager.writeOrdAndStdOrDerived(metaCatalog))
+      val message: String = res match {
         case Some(meta) =>
           val json: JsValue = MetaCatalogWrites.writes(meta)
           val obj = com.mongodb.util.JSON.parse(json.toString()).asInstanceOf[DBObject]
           val inserted = coll.insert(obj)
-          val msg = meta.operational.logical_uri
+          val msg = meta.operational.logical_uri.getOrElse("")
           msg
         case _ =>
           println("Error");
@@ -313,7 +320,23 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     }
   }
 
-  def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetStandardFields]] = {
+  def getFieldsVoc: Future[Seq[DatasetNameFields]] = {
+    val mongoClient = MongoClient(server, List(credentials))
+    val db = mongoClient(source)
+    val coll = db("catalog_test")
+    val result = coll.find(MongoDBObject("operational.is_vocabulary" -> true)).toList
+    mongoClient.close()
+    val jsonString = com.mongodb.util.JSON.serialize(result)
+    val json = Json.parse(jsonString)
+    val metaCatalogJs = json.validate[Seq[MetaCatalog]]
+    val metaCatalog: Seq[MetaCatalog] = metaCatalogJs match {
+      case s: JsSuccess[Seq[MetaCatalog]] => s.get
+      case e: JsError => Seq()
+    }
+    Future.successful(metaCatalog.map{catalog => DatasetNameFields(catalog.dcatapit.name, catalog.dataschema.avro.fields.get.map(f => f.name))})
+  }
+
+  def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetNameFields]] = {
     import mongodb.casbah.query.Imports._
 
     val query = $and(
@@ -332,7 +355,90 @@ class CatalogRepositoryMongo extends  CatalogRepository{
       case s: JsSuccess[Seq[MetaCatalog]] => s.get
       case e: JsError => Seq()
     }
-    Future.successful(metaCatalog.map{catalog => DatasetStandardFields(catalog.dcatapit.name, catalog.dataschema.avro.fields.get.map(f => f.name))})
+    Future.successful(metaCatalog.map{catalog => DatasetNameFields(catalog.dcatapit.name, catalog.dataschema.avro.fields.get.map(f => f.name))})
+  }
+
+  def getTag: Future[Seq[String]] = {
+
+    Logger.logger.debug(s"elasticsearchUrl: $elasticsearchUrl elasticsearchPort: $elasticsearchPort")
+
+    val client = HttpClient(ElasticsearchClientUri(elasticsearchUrl, elasticsearchPort))
+    val index = "ckan"
+    val searchType = "catalog_test"
+    val fieldsTags = "dataschema.flatSchema.metadata.tag.keyword"
+    val datasetTags = "dcatapit.tags.name.keyword"
+
+    val query = search(index).types(searchType)
+      .fetchSource(false)
+      .aggregations(
+        termsAgg("tagDatasets", datasetTags), termsAgg("tagFields", fieldsTags)
+      )
+
+    val searchResponse: Future[SearchResponse] = client.execute(query)
+
+    val response: Future[Seq[String]] = searchResponse.map{ res =>
+      res.aggregations.flatMap{aggr =>
+        aggr._2.asInstanceOf[Map[String, Int]]("buckets").asInstanceOf[List[Map[String, AnyVal]]].map(elem => elem("key").asInstanceOf[String])
+      }.toSeq.distinct
+    }
+
+    response onComplete {
+      res => Logger.debug(s"found ${res.getOrElse(Seq("no_tags")).size} tags")
+    }
+
+    response
+  }
+
+  def getLinkedDatasets(datasetName: String, linkedParams: LinkedParams, user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]] = {
+    import catalog_manager.yaml.BodyReads.MetaCatalogReads
+
+    Logger.logger.debug(s"elasticsearchUrl: $elasticsearchUrl elasticsearchPort: $elasticsearchPort")
+
+    val client = HttpClient(ElasticsearchClientUri(elasticsearchUrl, elasticsearchPort))
+    val index = "ckan"
+    val searchType = "catalog_test"
+    val queryDerivedFieldName = "operational.type_info.sources"
+    val querySourcesFieldName = "dcatapit.name"
+
+    def queryElastic(searchTypeInQuery: String, fieldName: String, fieldValue: String, limitResult: Option[Int]) = {
+      search(index).types(searchTypeInQuery).query(
+        boolQuery()
+          must(
+            must(matchQuery(fieldName, fieldValue))
+            should(
+              must(termQuery("dcatapit.privatex", true), matchQuery("operational.acl.groupName", groups.mkString(" ")).operator("OR")),
+              must(termQuery("dcatapit.privatex", true), termQuery("dcatapit.author", user)),
+              termQuery("dcatapit.privatex", false),
+              termQuery("private", false)
+            )
+          )
+      ).limit(limitResult.getOrElse(1000))
+    }
+
+    def getDerivedDataset = {
+      client.execute(queryElastic(searchType, queryDerivedFieldName, datasetName, limit)).map { res =>
+        res.hits.hits.map { source =>
+          MetaCatalogReads.reads(Json.parse(source.sourceAsString)) match {
+            case JsSuccess(value, _) => LinkedDataset("derived", value)
+          }
+        }.toList
+      }
+    }
+
+    def getSourcesDataset = {
+      client.execute(queryElastic(searchType, querySourcesFieldName, linkedParams.sourcesName.mkString(" "), limit)).map { res =>
+        res.hits.hits.map { source =>
+          MetaCatalogReads.reads(Json.parse(source.sourceAsString)) match {
+            case JsSuccess(value, _) => LinkedDataset("source", value)
+          }
+        }.toList
+      }
+    }
+
+    for{
+      sourcesDataset <- getSourcesDataset
+      derivedDataset <- getDerivedDataset
+    } yield sourcesDataset ::: derivedDataset
   }
 
 

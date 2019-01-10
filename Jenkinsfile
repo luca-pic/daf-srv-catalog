@@ -5,7 +5,7 @@ pipeline {
             when { branch 'dev' }
             agent { label 'Master' }
                 steps {
-                slackSend (message: "BUILD START: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' CHECK THE RESULT ON: https://cd.daf.teamdigitale.it/blue/organization/jenkins/daf-srv-storage/activity")
+                slackSend (message: "BUILD START: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' CHECK THE RESULT ON: ${JENKINS_URL}/blue/organization/jenkins/${JOB_NAME}/activity")
                 sh 'ansible-playbook ansible/main.yml --extra-vars "@/ansible/settings.yml"'
             }
         }
@@ -13,7 +13,7 @@ pipeline {
             when { branch 'master' }
             agent { label 'prod' }
                 steps {
-                slackSend (message: "BUILD START: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' CHECK THE RESULT ON: https://cd.daf.teamdigitale.it/blue/organization/jenkins/daf-srv-storage/activity")
+                slackSend (message: "BUILD START: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' CHECK THE RESULT ON: ${JENKINS_URL}/blue/organization/jenkins/${JOB_NAME}/activity")
                 sh 'ansible-playbook ansible/main.yml --extra-vars "@/ansible/settings.yml"'
             }
         }
@@ -55,7 +55,7 @@ pipeline {
             }
             steps {
                 sh 'cd kubernetes; sh deploy.sh'
-                slackSend (color: '#00FF00', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}] deployed in '${env.DEPLOY_ENV}' https://cd.daf.teamdigitale.it/blue/organizations/jenkins/daf-srv-catalog/activity")
+                slackSend (color: '#00FF00', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}] deployed in '${env.DEPLOY_ENV}' ${JENKINS_URL}/blue/organizations/jenkins/${JOB_NAME}/activity")
             }
 
         }
@@ -68,13 +68,13 @@ pipeline {
             }
             steps {
                 sh 'cd kubernetes; sh deploy.sh'
-                slackSend (color: '#00FF00', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}] deployed in '${env.DEPLOY_ENV}' https://cd.daf.teamdigitale.it/blue/organizations/jenkins/daf-srv-catalog/activity")
+                slackSend (color: '#00FF00', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}] deployed in '${env.DEPLOY_ENV}' ${JENKINS_URL}/blue/organizations/jenkins/${JOB_NAME}/activity")
             }
         }
     }
     post {
         failure {
-            slackSend (color: '#ff0000', message: "FAIL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' https://cd.daf.teamdigitale.it/blue/organizations/jenkins/daf-srv-catalog/activity")
+            slackSend (color: '#ff0000', message: "FAIL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' ${JENKINS_URL}/blue/organizations/jenkins/${JOB_NAME}/activity")
         }
     }
 }

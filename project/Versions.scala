@@ -1,6 +1,6 @@
 object Versions {
 
-  lazy val defaultVersion = "2.0.2"
+  lazy val defaultVersion = "2.0.7"
 
   val playVersion = "2.5.14"
 

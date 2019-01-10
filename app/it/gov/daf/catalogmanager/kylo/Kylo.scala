@@ -205,6 +205,32 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
     }
   }
 
+  private def transformationTemplate(id :Option[String],
+                            fileType: String,
+                            sftpPath: String): Future[(JsValue, List[JsObject])]
+  = {
+    val idExt = id.getOrElse("")
+    val url = s"/api/v1/feedmgr/templates/registered/$idExt?allProperties=true&feedEdit=true"
+    ws.url(KYLOURL + url)
+      .withAuth(KYLOUSER, KYLOPWD, scheme = WSAuthScheme.BASIC)
+      .get().map { resp =>
+      val templates = resp.json
+      val templatesEditable  = (templates \ "properties").as[List[JsValue]]
+        .filter(x => { (x \ "userEditable").as[Boolean] })
+      val modifiedTemplates: List[JsObject] = templatesEditable.map { temp =>
+        val key = (temp \ "key").as[String]
+        val transTemplate = key match {
+          case "Hostname" => temp.transform(KyloTrasformers.transformTemplates(SFTPHOSTNAME)).get
+          case "Remote Path" => temp.transform(KyloTrasformers.transformTemplates(sftpPath)).get
+          case "File Filter Regex" => temp.transform(KyloTrasformers.transformTemplates(".*" + fileType)).get
+        }
+        transTemplate
+      }
+
+      (templates, modifiedTemplates)
+    }
+  }
+
 
   def datasetIngest(fileType :String, meta :MetaCatalog) :Future[(JsValue, List[JsObject])] = {
     for {
@@ -231,6 +257,13 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
     for{
       idOpt <- templateIdByName("HDFS Ingest")
       templates <- hdfsTemplate(idOpt, fileType, hdfsPath)
+    } yield templates
+  }
+
+  def trasformerIngest(fileType: String, hdfsPath: String) = {
+    for{
+      idOpt <- templateIdByName("Dataset Transformation")
+      templates <- transformationTemplate(idOpt, fileType, hdfsPath)
     } yield templates
   }
 
