@@ -5,7 +5,3 @@
       template:
         src: ../project/Environment.scala.j2
         dest: ../project/Environment.scala
-    - name: Create daf-catalog-manager.yml file
-      template:
-        src: ../kubernetes/daf-catalog-manager.yml.j2
-        dest: ../kubernetes/daf-catalog-manager.yml

@@ -53,7 +53,9 @@ object KyloTrasformers {
       systemName match {
         case "dafType" => { if (metaCatalog.operational.is_std)
                                 x + ("value" -> JsString("standard"))
-                              else
+                            else if (fileType.equals("derived"))
+                                x + ("value" -> JsString("derived"))
+                            else
                                 x + ("value" -> JsString("ordinary"))
                             }
         case "dafDomain" => x + ("value" -> JsString(metaCatalog.operational.theme))
@@ -68,6 +70,87 @@ object KyloTrasformers {
       }
     })
     JsArray(result)
+  }
+
+  def tableFields(template :JsValue, inferredSchema :JsValue) : JsArray = {
+    val inferred = (inferredSchema \ "fields").as[JsArray]
+    val result = inferred.value.zipWithIndex.map {
+      case (x, y) => {
+        val name = (x \ "name").as[String]
+        val nativeDataType = (x \ "nativeDataType").as[String]
+        val derivedDataType = (x \ "derivedDataType").as[String]
+        val field = template.as[JsObject] + ("name" -> JsString(name)) +
+          ("_id" -> JsNumber(y)) +
+          ("dataType" -> JsString(nativeDataType)) +
+          ("derivedDataType" -> JsString(derivedDataType)) +
+          ("origName" -> JsString(name)) +
+          ("origDataType" -> JsString(nativeDataType))
+        field
+      }
+    }
+    JsArray(result)
+
+  }
+
+  def tablePoliciesFields(template :JsValue, inferredSchema :JsValue) : JsArray = {
+    val inferred = (inferredSchema \ "fields").as[JsArray]
+    val result = inferred.value.zipWithIndex.map {
+      case (x, y) => {
+        val name = (x \ "name").as[String]
+        val nativeDataType = (x \ "nativeDataType").as[String]
+        val derivedDataType = (x \ "derivedDataType").as[String]
+        val fieldTemplate = (template \ "field")
+        val field = fieldTemplate.as[JsObject] + ("name" -> JsString(name)) +
+          ("_id" -> JsNumber(y)) +
+          ("dataType" -> JsString(nativeDataType)) +
+          ("derivedDataType" -> JsString(derivedDataType)) +
+          ("origName" -> JsString(name)) +
+          ("origDataType" -> JsString(nativeDataType))
+        val policie = Json.obj("name" -> name,
+          "profile" -> false,
+          "standardization" -> JsNull,
+          "validation" -> JsNull,
+          "fieldName" -> name,
+          "feedFieldName" -> name,
+          "field" -> field
+        )
+        policie
+      }
+    }
+    JsArray(result)
+
+  }
+
+  def querySqlToSparkSnippet(metaCatalog: MetaCatalog) :(String, String) = {
+    val specialChar = "`"
+    val querySql = metaCatalog.operational.type_info.get.query_sql.get
+    val queryJson: JsValue = Json.parse(metaCatalog.operational.type_info.get.query_json.get)
+    val selectFields: Seq[JsValue] = (queryJson \\ "name")
+    var query: String = querySql.replace("T1", "tbl10")
+    val selects = selectFields.map(x => {
+      val oldField = x.as[String]
+      val lower = "tbl10." + specialChar + oldField.toLowerCase + specialChar
+      query = query.replace(oldField, lower)
+      lower
+    })
+    val sourcesJson = metaCatalog.operational.type_info.get.sources.get
+    println(querySql)
+    val startingIndex = querySql.split("\\.")
+    val db = startingIndex(0).substring(startingIndex(0).lastIndexOf(" ") + 1,
+      startingIndex(0).length)
+    val table = startingIndex(1).substring(0,
+      startingIndex(1).indexOf(" "))
+
+    val from = specialChar + db + specialChar + "." +
+      specialChar + table + specialChar
+
+    //val startTrasformSql = """import org.apache.spark.sql._ var df = sqlContext.sql(" """
+    //val endTrasformSql = """ ") df = df df """
+    val startTrasformSql = "import org.apache.spark.sql._; var df = sqlContext.sql(\" "
+    val endTrasformSql = " \"); df = df; df "
+
+    query = query.replace(db + "." + table, from)
+    (query, startTrasformSql + query + endTrasformSql)
   }
 
   //id: "efc036fe-ef47-42a6-bb00-7067efb358a5",
@@ -92,9 +175,9 @@ object KyloTrasformers {
          (((__ \ 'table) \ 'sourceTableSchema) \ 'fields).json.put((inferJson \ "fields").as[JsArray]) and
          (((__ \ 'table) \ 'feedTableSchema) \ 'fields).json.put((inferJson \ "fields").as[JsArray]) and
          ((__ \ 'table) \ 'feedFormat).json.put(JsString((inferJson \ "hiveFormat").as[String])) and
-         ((__ \ 'table) \ 'targetMergeStrategy).json.put(JsString(metaCatalog.operational.dataset_proc.get.merge_strategy)) and
+         ((__ \ 'table) \ 'targetMergeStrategy).json.put(JsString(metaCatalog.operational.dataset_proc.get.merge_strategy.toUpperCase)) and
          ((__ \ 'table) \ 'fieldPolicies).json.put(buildProfiling(inferJson)) and
-         ((__ \ 'schedule) \ 'schedulingStrategy).json.put(JsString("CRON_DRIVEN")) and
+         ((__ \ 'schedule) \ 'schedulingStrategy).json.put(JsString(metaCatalog.operational.dataset_proc.get.scheduling_strategy.get)) and
          ((__ \ 'schedule) \ 'schedulingPeriod).json.put(JsString(metaCatalog.operational.dataset_proc.get.cron)) and
          (__ \ 'category).json.put(Json.obj("id" -> (category \ "id").as[String],
                                       "name" ->  (category \ "name").as[String],
@@ -106,4 +189,120 @@ object KyloTrasformers {
     of[JsArray].map{ case JsArray(arr) => buildUserProperties(arr, metaCatalog, fileType) }
   )
 
+
+  def feedTrasformationTemplate(metaCatalog: MetaCatalog, category :JsValue): Reads[JsObject] = {
+    val feedName = metaCatalog.dcatapit.holder_identifier.get + "_o_" + metaCatalog.dcatapit.name
+    val org = metaCatalog.dcatapit.holder_identifier.get
+    val kyloSchema = Json.parse(metaCatalog.dataschema.kyloSchema.get)
+    __.json.update(
+      (__ \ 'feedName).json.put(JsString(feedName)) and
+        (__ \ 'systemFeedName).json.put(JsString(feedName)) and
+        (__ \ 'category).json.put(
+          Json.obj("id" -> (category \ "id").as[String],
+            "name" -> (category \ "name").as[String],
+            "systemName" -> (category \ "systemName").as[String]))
+        reduce
+    ) andThen (__ \ "schedule" \ "preconditions").json.update(
+      of[JsArray].map { case JsArray(arr) => {
+        val finalResults = arr.map(x => {
+          val props = (x \ "properties").as[JsArray]
+          val properties = props.value.map(obj => {
+            val name = (obj \ "name").as[String]
+            val updated: JsResult[JsObject] = name match {
+              case "Since Feed" => obj.transform(__.json.update(
+                (__ \ "value").json.put(JsString(org + "." + feedName))
+              ))
+              case "Dependent Feeds" => obj.transform(__.json.update(
+                (__ \ "values").json.update(
+                  of[JsArray].map { case JsArray(arr) => {
+                    val d = arr.map((_.as[JsObject] + ("label" -> JsString("new_org2.new_org2_o_botteghe_trento")) + ("value" -> JsString("new_org2.new_org2_o_botteghe_trento"))))
+                    JsArray(d)
+                  }
+                  }
+                )
+              ))
+              case _ => JsSuccess(obj.as[JsObject])
+            }
+            updated
+          })
+          val propsObj = properties.map(_.get)
+
+          val groups = (x \ "groups").as[JsArray]
+          val trasformedGroup = groups.value.map(group => {
+            val d = group.as[JsObject] + ("properties" -> JsArray(propsObj))
+            d
+          })
+
+          val rules = (x \ "ruleType").as[JsObject] + ("properties" -> JsArray(propsObj)) + ("groups" -> JsArray(trasformedGroup))
+
+
+          val result: JsValue = (x.as[JsObject] +
+            ("properties" -> JsArray(propsObj))) +
+            ("propertyValuesDisplayString" -> JsString(" Dependent Feeds: new_org2.new_org2_o_botteghe_trento")) +
+            ("groups" -> JsArray(trasformedGroup)) +
+            ("ruleType" -> rules)
+          result
+
+        })
+        JsArray(finalResults)
+      }
+      }
+    ) andThen (__ \ "table" \ "tableSchema").json.update(
+      (__ \ "name").json.put(JsString(feedName))
+    ) andThen (__ \ "table" \ "tableSchema" \ "fields").json.update(
+      of[JsArray].map { case JsArray(arr) => {
+        val template = arr.head
+        val fields = tableFields(template, kyloSchema)
+        fields
+      }
+      }
+
+    ) andThen (__ \ "table" \ "sourceTableSchema" \ "fields").json.update(
+      of[JsArray].map { case JsArray(arr) => {
+        val template = arr.head
+        val fields = tableFields(template, kyloSchema)
+        fields
+      }
+      }
+
+    ) andThen (__ \ "table" \ "feedTableSchema" \ "fields").json.update(
+      of[JsArray].map { case JsArray(arr) => {
+        val template = arr.head
+        val fields = tableFields(template, kyloSchema)
+        fields
+      }
+      }
+
+    ) andThen (__ \ "table" \ "fieldPolicies").json.update(
+      of[JsArray].map { case JsArray(arr) => {
+        val template = arr.head
+        val fields = tablePoliciesFields(template, kyloSchema)
+        fields
+      }
+      }
+
+    ) andThen (__ \ "dataTransformation" \ "$selectedColumnsAndTables").json.update(
+      of[JsArray].map { case JsArray(arr) => {
+        val inferred = (kyloSchema \ "fields").as[JsArray]
+        val result = inferred.value.map(x => {
+          val name = (x \ "name").as[String]
+          Json.obj(
+            "column" -> name,
+            "alias" -> "tbl10",
+            "tableName" -> "tran__marittimo.new_org2_o_botteghe_trento",
+            "tableColumn" -> name)
+        })
+        JsArray(result)
+      }
+
+      }
+
+    ) andThen (__ \ "dataTransformation").json.update(
+      (__ \ "sql").json.put(JsString(querySqlToSparkSnippet(metaCatalog)._1)) and
+        (__ \ "dataTransformScript").json.put(JsString(querySqlToSparkSnippet(metaCatalog)._2))
+    reduce
+    )  andThen (__ \ 'userProperties).json.update(
+      of[JsArray].map{ case JsArray(arr) => buildUserProperties(arr, metaCatalog, "derived") }
+    )
+  }
 }

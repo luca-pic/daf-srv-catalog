@@ -1,7 +1,7 @@
 package it.gov.daf.catalogmanager.service
 
 
-import catalog_manager.yaml.{Dataset, DatasetStandardFields, Error, MetaCatalog, MetadataCat, Success}
+import catalog_manager.yaml.{Dataset, DatasetNameFields, Error, LinkedDataset, LinkedParams, MetaCatalog, MetadataCat, Success}
 import it.gov.daf.catalogmanager.repository.catalog.CatalogRepositoryComponent
 import play.api.libs.json.JsValue
 
@@ -57,9 +57,20 @@ trait CatalogServiceComponent {
       catalogRepository.deleteCatalogByName(nameCatalog, user, token: String, wsClient)
     }
 
-    def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetStandardFields]] = {
+    def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetNameFields]] = {
       catalogRepository.getDatasetStandardFields(user, groups)
     }
 
+    def getTag: Future[Seq[String]] = {
+      catalogRepository.getTag
+    }
+
+    def getFieldsVoc: Future[Seq[DatasetNameFields]] = {
+      catalogRepository.getFieldsVoc
+    }
+
+    def getLinkedDatasets(datasetName: String, linkedParams: LinkedParams, user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]] = {
+      catalogRepository.getLinkedDatasets(datasetName, linkedParams, user, groups, limit)
+    }
   }
 }

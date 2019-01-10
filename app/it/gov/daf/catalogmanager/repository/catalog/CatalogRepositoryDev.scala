@@ -128,7 +128,14 @@ class CatalogRepositoryDev extends CatalogRepository{
 
   override def internalCatalogByName(name: String): Option[MetaCatalog] = None
 
-  def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetStandardFields]] = {
-    Future.successful(Seq[DatasetStandardFields]())
+  def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetNameFields]] = {
+    Future.successful(Seq[DatasetNameFields]())
   }
+
+  def getTag: Future[Seq[String]] = Future.successful(Seq[String]())
+
+  def getFieldsVoc: Future[Seq[DatasetNameFields]] = Future.successful(Seq[DatasetNameFields]())
+
+  def getLinkedDatasets(datasetName: String, linkedParams: LinkedParams, user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]] =
+    Future.successful(Seq[LinkedDataset]())
 }
