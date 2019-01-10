@@ -7,4 +7,5 @@
 /.idea/
 /logs/
 localConfigs/*
-.DS_store
+.DS_Store
+
