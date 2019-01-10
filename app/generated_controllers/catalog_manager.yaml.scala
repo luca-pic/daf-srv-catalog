@@ -50,7 +50,7 @@ import it.gov.daf.catalogmanager.nifi.Nifi
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-
+    
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -259,7 +259,7 @@ package catalog_manager.yaml {
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.createdatasetcatalogExtOpenData
         }
-        val getTags = getTagsAction {  _ =>
+        val getTags = getTagsAction {  _ =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.getTags
             RequestContext.execInContext[Future[GetTagsType[T] forSome { type T }]]("getTags") { () =>
             GetTags200(ServiceRegistry.catalogService.getTag)
@@ -267,7 +267,7 @@ package catalog_manager.yaml {
 //            NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.getTags
         }
-        val getckandatasetList = getckandatasetListAction {  _ =>
+        val getckandatasetList = getckandatasetListAction {  _ =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.getckandatasetList
             RequestContext.execInContext[Future[GetckandatasetListType[T] forSome { type T }]]("getckandatasetList") { () =>
                 val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
@@ -326,7 +326,7 @@ package catalog_manager.yaml {
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.voc_dcat2dafsubtheme
         }
-        val addQueueCatalog = addQueueCatalogAction { (catalog: StringToKafka) =>
+        val addQueueCatalog = addQueueCatalogAction { (catalog: StringToKafka) =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.addQueueCatalog
             RequestContext.execInContext[Future[AddQueueCatalogType[T] forSome { type T }]]("addQueueCatalog") { () =>
               logger.debug(s"catalog: ${catalog.catalog}")
@@ -373,7 +373,7 @@ package catalog_manager.yaml {
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.startNifiProcessor
         }
-        val datasetcatalogbyname = datasetcatalogbynameAction { (name: String) =>
+        val datasetcatalogbyname = datasetcatalogbynameAction { (name: String) =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.datasetcatalogbyname
             RequestContext.execInContext[Future[DatasetcatalogbynameType[T] forSome { type T }]]("datasetcatalogbyname") { () =>
                 val groups = CredentialManager.readCredentialFromRequest(currentRequest).groups.toList
@@ -613,14 +613,14 @@ package catalog_manager.yaml {
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.getLinkedDataset
         }
-        val getFieldsVoc = getFieldsVocAction {  _ =>
+        val getFieldsVoc = getFieldsVocAction {  _ =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.getFieldsVoc
             RequestContext.execInContext[Future[GetFieldsVocType[T] forSome { type T }]]("getFieldsVoc") { () =>
             GetFieldsVoc200(ServiceRegistry.catalogService.getFieldsVoc)
           }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.getFieldsVoc
         }
-        val createckanorganization = createckanorganizationAction { (organization: Organization) =>
+        val createckanorganization = createckanorganizationAction { (organization: Organization) =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.createckanorganization
             RequestContext.execInContext[Future[CreateckanorganizationType[T] forSome { type T }]]("createckanorganization") { () =>
                 val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
