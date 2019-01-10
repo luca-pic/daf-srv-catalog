@@ -17,7 +17,6 @@ import scala.util._
 
 import javax.inject._
 
-import java.io.File
 import de.zalando.play.controllers.PlayBodyParsing._
 import it.gov.daf.catalogmanager.listeners.IngestionListenerImpl
 import it.gov.daf.catalogmanager.service.{CkanRegistry,ServiceRegistry}
@@ -31,7 +30,6 @@ import it.gov.daf.common.utils.WebServiceUtil
 import it.gov.daf.catalogmanager.service.VocServiceRegistry
 import play.api.libs.ws.WSClient
 import java.net.URLEncoder
-import it.gov.daf.catalogmanager.utilities.ConfigReader
 import play.api.libs.ws.WSResponse
 import play.api.libs.ws.WSAuthScheme
 import java.io.FileInputStream
@@ -41,15 +39,9 @@ import catalog_manager.yaml
 import it.gov.daf.catalogmanager.kylo.Kylo
 import it.gov.daf.common.sso.common.CredentialManager
 import play.api.Logger
-import yaml.ResponseWrites.MetaCatalogWrites.writes
-import play.api.mvc.Headers
-import scala.concurrent.duration._
-import scala.concurrent.Await
-import yaml.ResponseWrites.MetaCatalogWrites.writes
 import play.api.mvc.Headers
 import it.gov.daf.common.utils.RequestContext
-import java.lang
-import akka.stream.ConnectionException
+import it.gov.daf.catalogmanager.nifi.Nifi
 
 /**
  * This controller is re-generated after each change in the specification.
@@ -58,13 +50,14 @@ import akka.stream.ConnectionException
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-                                                                                                                                                                                                                                                                                                                                                
+
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
 
         ingestionListener : IngestionListenerImpl,
         val kylo :Kylo,
+        val Nifi: Nifi,
         val configuration: Configuration,
         val playSessionStore: PlaySessionStore,
         val ws: WSClient,
@@ -83,9 +76,9 @@ package catalog_manager.yaml {
         val KYLOPWD = config.get.getString("kylo.userpwd").getOrElse("XXXXXXXXXXX")
         val KAFKAPROXY = config.get.getString("kafkaProxy.url").get
 
-        private def sendMessageKafkaProxy(user: String, catalog: MetaCatalog, token: String): Future[Either[Error, Success]] = {
+        private def sendMessageKafkaProxy(user: String, catalog: String, token: String): Future[Either[Error, Success]] = {
             Logger.logger.debug(s"kafka proxy $KAFKAPROXY")
-            val jsonMetacatol = writes(catalog)
+            val jsonMetacatol = Json.parse(catalog)
             val jsonUser: String = s""""user":"$user""""
             val jsonToken = s""""token":"$token""""
             val jsonBody = Json.parse(
@@ -191,7 +184,7 @@ package catalog_manager.yaml {
 
                 futureResponses.flatMap {
                     case Right(s) => DeleteCatalog200(s)
-                    case Left(e) => rollBackCatalog(catalogToDelete.get); DeleteCatalog500(e)
+                    case Left(e) => futureResponseMongo.map{ res => if(res.isRight)rollBackCatalog(catalogToDelete.get) }; DeleteCatalog500(e)
                 }
             }
 //          NotImplementedYet
@@ -225,7 +218,12 @@ package catalog_manager.yaml {
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.getDatasetStandardFields
             RequestContext.execInContext[Future[GetDatasetStandardFieldsType[T] forSome { type T }]]("getDatasetStandardFields") { () =>
               val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
-              GetDatasetStandardFields200(ServiceRegistry.catalogService.getDatasetStandardFields(credentials.username, credentials.groups.toList))
+              val response: Future[Seq[DatasetNameFields]] = ServiceRegistry.catalogService.getDatasetStandardFields(credentials.username, credentials.groups.toList)
+              response onComplete { seq =>
+                if(seq.getOrElse(Seq[DatasetNameFields]()).isEmpty) logger.debug(s"nof found dataset standard fields for ${credentials.username}")
+                else logger.debug(s"found ${seq.get.size} dataset standard")
+              }
+              GetDatasetStandardFields200(response)
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.getDatasetStandardFields
         }
@@ -261,7 +259,15 @@ package catalog_manager.yaml {
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.createdatasetcatalogExtOpenData
         }
-        val getckandatasetList = getckandatasetListAction {  _ =>  
+        val getTags = getTagsAction {  _ =>
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.getTags
+            RequestContext.execInContext[Future[GetTagsType[T] forSome { type T }]]("getTags") { () =>
+            GetTags200(ServiceRegistry.catalogService.getTag)
+          }
+//            NotImplementedYet
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.getTags
+        }
+        val getckandatasetList = getckandatasetListAction {  _ =>
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.getckandatasetList
             RequestContext.execInContext[Future[GetckandatasetListType[T] forSome { type T }]]("getckandatasetList") { () =>
                 val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
@@ -293,7 +299,7 @@ package catalog_manager.yaml {
             RequestContext.execInContext[Future[DatasetcatalogsType[T] forSome { type T }]]("datasetcatalogs") { () =>
                 val pageIng :Option[Int] = page
                 val limitIng :Option[Int] = limit
-                val catalogs  = ServiceRegistry.catalogService.listCatalogs(page,limit)
+                val catalogs = ServiceRegistry.catalogService.listCatalogs(page,limit)
 
                 catalogs match {
                     case Seq() => Datasetcatalogs401("No data")
@@ -320,16 +326,17 @@ package catalog_manager.yaml {
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.voc_dcat2dafsubtheme
         }
-        val addQueueCatalog = addQueueCatalogAction { (catalog: MetaCatalog) =>  
+        val addQueueCatalog = addQueueCatalogAction { (catalog: StringToKafka) =>
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.addQueueCatalog
             RequestContext.execInContext[Future[AddQueueCatalogType[T] forSome { type T }]]("addQueueCatalog") { () =>
+              logger.debug(s"catalog: ${catalog.catalog}")
                 val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
                 if( CredentialManager.isDafSysAdmin(currentRequest) || CredentialManager.isOrgsEditor(currentRequest, credentials.groups) ||
                   CredentialManager.isOrgsAdmin(currentRequest, credentials.groups)) {
                     val token = readTokenFromRequest(currentRequest.headers, false)
                     token match {
                         case Some(t) => {
-                            val futureKafkaResp = sendMessageKafkaProxy(credentials.username, catalog, t)
+                            val futureKafkaResp = sendMessageKafkaProxy(credentials.username, catalog.catalog, t)
                             futureKafkaResp.flatMap{
                                 case Right(r) => logger.info("sending to kafka");AddQueueCatalog200(r)
                                 case Left(l) => AddQueueCatalog500(l)
@@ -355,7 +362,18 @@ package catalog_manager.yaml {
             // NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.standardsuri
         }
-        val datasetcatalogbyname = datasetcatalogbynameAction { (name: String) =>  
+        val startNifiProcessor = startNifiProcessorAction { input: (String, String) =>
+            val (orgName, datasetName) = input
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.startNifiProcessor
+            RequestContext.execInContext[Future[StartNifiProcessorType[T] forSome { type T }]]("startNifiProcessor") { () =>
+              Nifi.startDerivedProcessor(orgName, s"${orgName}_o_${datasetName}") flatMap {
+                case Right(success) => StartNifiProcessor200(success)
+                case Left(error)    => StartNifiProcessor500(error)
+              }
+            }
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.startNifiProcessor
+        }
+        val datasetcatalogbyname = datasetcatalogbynameAction { (name: String) =>
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.datasetcatalogbyname
             RequestContext.execInContext[Future[DatasetcatalogbynameType[T] forSome { type T }]]("datasetcatalogbyname") { () =>
                 val groups = CredentialManager.readCredentialFromRequest(currentRequest).groups.toList
@@ -420,6 +438,14 @@ package catalog_manager.yaml {
                     //If(!created.message.equals("Error")) sendMessaggeKafkaProxy(credentials.username, catalog)
                     //sendMessaggeKafkaProxy(credentials.username, catalog)
                     //logger.info("sending to kafka")
+                    if(created.isRight){
+                        Logger.logger.debug(s"${credentials.username} added ${catalog.dcatapit.name}")
+                        Createdatasetcatalog200(created.right.get)
+                    }
+                    else{
+                        Logger.logger.debug(s"error in create catalog ${catalog.dcatapit.name}")
+                        Createdatasetcatalog500(created.left.get)
+                    }
                     if(created.isRight){
                         Logger.logger.debug(s"${credentials.username} added ${catalog.dcatapit.name.get}")
                         Createdatasetcatalog200(created.right.get)
@@ -578,7 +604,23 @@ package catalog_manager.yaml {
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.voc_daf2dcatsubtheme
         }
-        val createckanorganization = createckanorganizationAction { (organization: Organization) =>  
+        val getLinkedDataset = getLinkedDatasetAction { input: (String, MetadataRequired, LinkedParams) =>
+            val (name, limit, linkedParams) = input
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.getLinkedDataset
+            RequestContext.execInContext[Future[GetLinkedDatasetType[T] forSome { type T }]]("getLinkedDataset") { () =>
+              val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
+               GetLinkedDataset200(ServiceRegistry.catalogService.getLinkedDatasets(name, linkedParams, credentials.username, credentials.groups.toList, limit))
+            }
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.getLinkedDataset
+        }
+        val getFieldsVoc = getFieldsVocAction {  _ =>
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.getFieldsVoc
+            RequestContext.execInContext[Future[GetFieldsVocType[T] forSome { type T }]]("getFieldsVoc") { () =>
+            GetFieldsVoc200(ServiceRegistry.catalogService.getFieldsVoc)
+          }
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.getFieldsVoc
+        }
+        val createckanorganization = createckanorganizationAction { (organization: Organization) =>
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.createckanorganization
             RequestContext.execInContext[Future[CreateckanorganizationType[T] forSome { type T }]]("createckanorganization") { () =>
                 val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
@@ -766,93 +808,140 @@ package catalog_manager.yaml {
             val (file_type, feed) = input
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.startKyloFedd
             RequestContext.execInContext[Future[StartKyloFeddType[T] forSome { type T }]]("startKyloFedd") { () =>
-                val skipHeader = file_type match {
-                    case "csv" => true
-                    case "json" => false
+
+                if (feed.operational.type_info.isDefined && feed.operational.type_info.get.dataset_type.equals("derived_sql")) {
+                    logger.info("feed started")
+
+                    logger.info("QUI CI PASSO ALMENO")
+                    val streamKyloTemplate = new FileInputStream(Environment.simple().getFile("/data/kylo/template_trasformation.json"))
+
+                    val kyloTemplate = try {
+                        Json.parse(streamKyloTemplate)
+                    } finally {
+                        streamKyloTemplate.close()
+                    }
+
+                    val categoryFuture = kylo.categoryFuture(feed)
+                    val kyloSchema = feed.dataschema.kyloSchema.get
+                    val inferJson = Json.parse(kyloSchema)
+
+                    val feedCreation = ws.url(KYLOURL + "/api/v1/feedmgr/feeds")
+                      .withAuth(KYLOUSER, KYLOPWD, WSAuthScheme.BASIC)
+
+                    val feedData = for {
+                        category <- categoryFuture
+                        trasformed <- Future(kyloTemplate.transform(
+                            KyloTrasformers.feedTrasformationTemplate(feed,
+                                category))
+                        )
+                    } yield trasformed
+
+                    val createFeed: Future[WSResponse] = feedData.flatMap {
+                        case s: JsSuccess[JsValue] => logger.debug(Json.stringify(s.get)); feedCreation.post(s.get)
+                        case e: JsError => throw new Exception(JsError.toJson(e).toString())
+                    }
+
+                    createFeed onComplete (r => Logger.logger.debug(s"kyloResp: ${r.get.status}"))
+
+                    val result = createFeed.flatMap {
+                        // Assuming status 200 (OK) is a valid result for you.
+                        case resp: WSResponse if resp.status == 200 => logger.debug(Json.stringify(resp.json)); StartKyloFedd200(yaml.Success("Feed started", Option(resp.body)))
+                        case _ => StartKyloFedd401(Error("Feed not created", Option(401), None))
+                    }
+
+                    result
+
+                } else {
+
+
+                    val skipHeader = file_type match {
+                        case "csv" => true
+                        case "json" => false
+                    }
+
+
+                    val ingest = feed.operational.input_src match {
+                        case InputSrc(Some(_), None, None, _) => "sftp"
+                        case InputSrc(None, Some(_), None, _) => "srv_pull"
+                        case InputSrc(None, None, Some(_), _) => "srv_push"
+                    }
+
+                    val user = CredentialManager.readCredentialFromRequest(currentRequest).username
+
+                    val domain = feed.operational.theme
+                    val subDomain = feed.operational.subtheme
+                    val dsName = feed.dcatapit.name
+
+
+                    val path = ingest match {
+                        case "srv_push" => s"/uploads/$user/$domain/$subDomain/$dsName"
+                        case _ => s"/home/$user/ftp/$domain/$subDomain/$dsName"
+                    }
+
+                    logger.debug(s"$ingest: $path")
+
+
+                    val templateProperties = ingest match {
+                        case "sftp" => kylo.sftpRemoteIngest(file_type, path)
+                        case "srv_pull" => kylo.wsIngest(file_type, feed)
+                        case "srv_push" => kylo.hdfsIngest(file_type, path)
+                    }
+
+                    val categoryFuture = kylo.categoryFuture(feed)
+
+                    val streamKyloTemplate = new FileInputStream(Environment.simple().getFile("/data/kylo/template_test.json"))
+
+                    val kyloTemplate = try {
+                        Json.parse(streamKyloTemplate)
+                    } finally {
+                        streamKyloTemplate.close()
+                    }
+
+                    val sftpPath = URLEncoder.encode(s"$domain/$subDomain/$dsName", "UTF-8")
+
+                    //            val createDir = ws.url("http://security-manager.default.svc.cluster.local:9000/security-manager/v1/sftp/init/" + URLEncoder.encode(sftpPath, "UTF-8") + s"?orgName=${feed.dcatapit.owner_org.get}")
+                    val createDir = ws.url(SEC_MANAGER_HOST + "/security-manager/v1/sftp/init/" + sftpPath + s"?orgName=${feed.dcatapit.owner_org.get}")
+                      .withHeaders(("authorization", currentRequest.headers.get("authorization").get))
+
+                    //val trasformed = kyloTemplate.transform(KyloTrasformers.feedTrasform(feed))
+
+                    val kyloSchema = feed.dataschema.kyloSchema.get
+                    val inferJson = Json.parse(kyloSchema)
+
+                    val feedCreation = ws.url(KYLOURL + "/api/v1/feedmgr/feeds")
+                      .withAuth(KYLOUSER, KYLOPWD, WSAuthScheme.BASIC)
+
+                    val feedData = for {
+                        (template, templates) <- templateProperties
+                        created <- createDir.get()
+                        category <- categoryFuture
+                        trasformed <- Future(kyloTemplate.transform(
+                            KyloTrasformers.feedTrasform(feed,
+                                template,
+                                templates,
+                                inferJson,
+                                category,
+                                file_type,
+                                skipHeader)
+                        )
+                        )
+                    } yield trasformed
+
+                    val createFeed: Future[WSResponse] = feedData.flatMap {
+                        case s: JsSuccess[JsValue] => logger.debug(Json.stringify(s.get)); feedCreation.post(s.get)
+                        case e: JsError => throw new Exception(JsError.toJson(e).toString())
+                    }
+
+                    createFeed onComplete (r => Logger.logger.debug(s"kyloResp: ${r.get.status}"))
+
+                    val result = createFeed.flatMap {
+                        // Assuming status 200 (OK) is a valid result for you.
+                        case resp: WSResponse if resp.status == 200 => logger.debug(Json.stringify(resp.json)); StartKyloFedd200(yaml.Success("Feed started", Option(resp.body)))
+                        case _ => StartKyloFedd401(Error("Feed not created", Option(401), None))
+                    }
+
+                    result
                 }
-
-
-                val ingest = feed.operational.input_src match {
-                    case  InputSrc(Some(_), None, None, _) => "sftp"
-                    case  InputSrc(None, Some(_), None, _) => "srv_pull"
-                    case  InputSrc(None, None, Some(_), _) => "srv_push"
-                }
-
-                val user = CredentialManager.readCredentialFromRequest(currentRequest).username
-
-                val domain = feed.operational.theme
-                val subDomain = feed.operational.subtheme
-                val dsName = feed.dcatapit.name
-
-
-                val path = ingest match {
-                    case "srv_push" => s"/uploads/$user/$domain/$subDomain/$dsName"
-                    case _ => s"/home/$user/ftp/$domain/$subDomain/$dsName"
-                }
-
-                logger.debug(s"$ingest: $path")
-
-
-                val templateProperties = ingest match {
-                    case "sftp" => kylo.sftpRemoteIngest(file_type, path)
-                    case "srv_pull" => kylo.wsIngest(file_type, feed)
-                    case "srv_push" => kylo.hdfsIngest(file_type, path)
-                }
-
-                val categoryFuture = kylo.categoryFuture(feed)
-
-                val streamKyloTemplate = new FileInputStream(Environment.simple().getFile("/data/kylo/template_test.json"))
-
-                val kyloTemplate  = try {
-                    Json.parse(streamKyloTemplate)
-                } finally {
-                    streamKyloTemplate.close()
-                }
-
-                val sftpPath =  URLEncoder.encode(s"$domain/$subDomain/$dsName", "UTF-8")
-
-                //            val createDir = ws.url("http://security-manager.default.svc.cluster.local:9000/security-manager/v1/sftp/init/" + URLEncoder.encode(sftpPath, "UTF-8") + s"?orgName=${feed.dcatapit.owner_org.get}")
-                val createDir = ws.url(SEC_MANAGER_HOST + "/security-manager/v1/sftp/init/" + sftpPath + s"?orgName=${feed.dcatapit.owner_org.get}")
-                  .withHeaders(("authorization", currentRequest.headers.get("authorization").get))
-
-                //val trasformed = kyloTemplate.transform(KyloTrasformers.feedTrasform(feed))
-
-                val kyloSchema = feed.dataschema.kyloSchema.get
-                val inferJson = Json.parse(kyloSchema)
-
-                val feedCreation = ws.url(KYLOURL + "/api/v1/feedmgr/feeds")
-                  .withAuth(KYLOUSER, KYLOPWD, WSAuthScheme.BASIC)
-
-                val feedData = for {
-                    (template, templates) <- templateProperties
-                    created <-  createDir.get()
-                    category <- categoryFuture
-                    trasformed <-  Future(kyloTemplate.transform(
-                        KyloTrasformers.feedTrasform(feed,
-                            template,
-                            templates,
-                            inferJson,
-                            category,
-                            file_type,
-                            skipHeader)
-                    )
-                    )
-                } yield trasformed
-
-                val createFeed: Future[WSResponse] = feedData.flatMap {
-                    case s: JsSuccess[JsValue] => logger.debug(Json.stringify(s.get));feedCreation.post(s.get)
-                    case e: JsError => throw new Exception(JsError.toJson(e).toString())
-                }
-
-                createFeed onComplete(r => Logger.logger.debug(s"kyloResp: ${r.get.status}"))
-
-                val result = createFeed.flatMap {
-                    // Assuming status 200 (OK) is a valid result for you.
-                    case resp : WSResponse if resp.status == 200 => logger.debug(Json.stringify(resp.json));StartKyloFedd200(yaml.Success("Feed started", Option(resp.body)))
-                    case _ => StartKyloFedd401(Error("Feed not created", Option(401), None))
-                }
-
-                result
             }
            // NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.startKyloFedd
