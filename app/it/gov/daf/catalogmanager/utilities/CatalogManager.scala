@@ -122,7 +122,7 @@ object CatalogManager {
       Standard
     //else if (!metaCatalog.dcatapit.privatex.getOrElse(false))
     //else if (metaCatalog.dcatapit.owner_org.get.equals("open_data"))
-    else if(metaCatalog.operational.type_info.isDefined)
+    else if(metaCatalog.operational.type_info.isDefined)  //&& metaCatalog.operational.type_info.get.sources.isDefined)
       Derived
     else if (!metaCatalog.operational.ext_opendata.isEmpty)
       OpenData
