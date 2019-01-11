@@ -260,7 +260,7 @@ def feedTrasformationTemplate(metaCatalog: MetaCatalog, category :JsValue): Read
         Json.obj(
           "column" -> name,
           "alias" -> "tbl10",
-          //"tableName" -> "tran__marittimo.new_org2_o_botteghe_trento",
+          "tableName" -> "tran__marittimo.new_org2_o_botteghe_trento",
           "tableName" -> tableName,
           "tableColumn" -> name)
       })
