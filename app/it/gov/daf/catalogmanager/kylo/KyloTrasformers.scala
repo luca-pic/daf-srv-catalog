@@ -288,10 +288,14 @@ object KyloTrasformers {
       }
       }
 
+    )  andThen (__ \ "dataTransformation").json.update(
+      (__ \ "sql").json.put(JsString(querySqlToSparkSnippet(metaCatalog)._1)) and
+        (__ \ "dataTransformScript").json.put(JsString(querySqlToSparkSnippet(metaCatalog)._2))
+    reduce
     ) andThen (__ \ "dataTransformation" \ "$selectedColumnsAndTables").json.update(
       of[JsArray].map { case JsArray(arr) => {
         val inferred = (kyloSchema \ "fields").as[JsArray]
-        val tableName = metaCatalog.operational.theme + "__" + metaCatalog.operational.subtheme + "." + dependentFeed
+        val tableName = metaCatalog.operational.theme + "__" + metaCatalog.operational.subtheme + "." + dependentOrg + "_o_" + dependentName
         val result = inferred.value.map(x => {
           val name = (x \ "name").as[String]
           Json.obj(
@@ -306,11 +310,7 @@ object KyloTrasformers {
 
       }
 
-    ) andThen (__ \ "dataTransformation").json.update(
-      (__ \ "sql").json.put(JsString(querySqlToSparkSnippet(metaCatalog)._1)) and
-        (__ \ "dataTransformScript").json.put(JsString(querySqlToSparkSnippet(metaCatalog)._2))
-    reduce
-    )  andThen (__ \ 'userProperties).json.update(
+    )andThen (__ \ 'userProperties).json.update(
       of[JsArray].map{ case JsArray(arr) => buildUserProperties(arr, metaCatalog, "derived") }
     )
   }
