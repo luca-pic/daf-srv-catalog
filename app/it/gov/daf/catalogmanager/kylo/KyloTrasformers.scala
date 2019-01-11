@@ -194,6 +194,13 @@ object KyloTrasformers {
     val feedName = metaCatalog.dcatapit.holder_identifier.get + "_o_" + metaCatalog.dcatapit.name
     val org = metaCatalog.dcatapit.holder_identifier.get
     val kyloSchema = Json.parse(metaCatalog.dataschema.kyloSchema.get)
+    // Test for only one dependent feed
+    // TODO handle multiple sources and open data
+    val sourceString = metaCatalog.operational.type_info.get.sources.get.head
+    val source = Json.parse(sourceString)
+    val dependentOrg = (source \ "owner_org").as[String]
+    val dependentName = (source \ "name").as[String]
+    val dependentFeed = s"$dependentOrg.$dependentOrg" + "_o_" + dependentName
     __.json.update(
       (__ \ 'feedName).json.put(JsString(feedName)) and
         (__ \ 'systemFeedName).json.put(JsString(feedName)) and
@@ -215,7 +222,7 @@ object KyloTrasformers {
               case "Dependent Feeds" => obj.transform(__.json.update(
                 (__ \ "values").json.update(
                   of[JsArray].map { case JsArray(arr) => {
-                    val d = arr.map((_.as[JsObject] + ("label" -> JsString(feedName)) + ("value" -> JsString(feedName))))
+                    val d = arr.map((_.as[JsObject] + ("label" -> JsString(dependentFeed)) + ("value" -> JsString(dependentFeed))))
                     JsArray(d)
                   }
                   }
@@ -238,7 +245,7 @@ object KyloTrasformers {
 
           val result: JsValue = (x.as[JsObject] +
             ("properties" -> JsArray(propsObj))) +
-            ("propertyValuesDisplayString" -> JsString(" Dependent Feeds: " + feedName)) +
+            ("propertyValuesDisplayString" -> JsString(s" Dependent Feeds: $dependentFeed")) +
             ("groups" -> JsArray(trasformedGroup)) +
             ("ruleType" -> rules)
           result
@@ -284,12 +291,14 @@ object KyloTrasformers {
     ) andThen (__ \ "dataTransformation" \ "$selectedColumnsAndTables").json.update(
       of[JsArray].map { case JsArray(arr) => {
         val inferred = (kyloSchema \ "fields").as[JsArray]
+        val tableName = metaCatalog.operational.theme + "__" + metaCatalog.operational.subtheme + "." + dependentFeed
         val result = inferred.value.map(x => {
           val name = (x \ "name").as[String]
           Json.obj(
             "column" -> name,
             "alias" -> "tbl10",
-            "tableName" -> feedName,
+            //"tableName" -> "tran__marittimo.new_org2_o_botteghe_trento",
+            "tableName" -> tableName,
             "tableColumn" -> name)
         })
         JsArray(result)
