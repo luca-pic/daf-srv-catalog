@@ -302,7 +302,8 @@ object KyloTrasformers {
             "column" -> name,
             "alias" -> "tbl10",
             //"tableName" -> "tran__marittimo.new_org2_o_botteghe_trento",
-            "tableName" -> "gove__amministrazione.daf_data_o_anpr",
+            // Maybe error but i believe kylo does not use it
+            "tableName" -> dependentFeed,
             "tableColumn" -> name)
         })
         JsArray(result)
