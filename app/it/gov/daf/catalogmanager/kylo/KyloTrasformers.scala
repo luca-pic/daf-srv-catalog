@@ -295,14 +295,14 @@ object KyloTrasformers {
     ) andThen (__ \ "dataTransformation" \ "$selectedColumnsAndTables").json.update(
       of[JsArray].map { case JsArray(arr) => {
         val inferred = (kyloSchema \ "fields").as[JsArray]
-        val tableName = metaCatalog.operational.theme + "__" + metaCatalog.operational.subtheme + "." + dependentOrg + "_o_" + dependentName
+        //val tableName = metaCatalog.operational.theme + "__" + metaCatalog.operational.subtheme + "." + dependentOrg + "_o_" + dependentName
         val result = inferred.value.map(x => {
           val name = (x \ "name").as[String]
           Json.obj(
             "column" -> name,
             "alias" -> "tbl10",
             //"tableName" -> "tran__marittimo.new_org2_o_botteghe_trento",
-            "tableName" -> tableName,
+            "tableName" -> "gove__amministrazione.daf_data_o_anpr",
             "tableColumn" -> name)
         })
         JsArray(result)
