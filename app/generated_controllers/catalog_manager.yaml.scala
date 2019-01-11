@@ -828,6 +828,7 @@ package catalog_manager.yaml {
                     val feedCreation = ws.url(KYLOURL + "/api/v1/feedmgr/feeds")
                       .withAuth(KYLOUSER, KYLOPWD, WSAuthScheme.BASIC)
 
+
                     val feedData = for {
                         category <- categoryFuture
                         trasformed <- Future(kyloTemplate.transform(
