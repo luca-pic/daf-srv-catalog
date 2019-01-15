@@ -97,15 +97,15 @@ object KyloTrasformers {
     val result = inferred.value.zipWithIndex.map {
       case (x, y) => {
         val name = (x \ "name").as[String]
-        val nativeDataType = (x \ "nativeDataType").as[String]
+        val nativeDataType = (x \ "nativeDataType").asOpt[String]
         val derivedDataType = (x \ "derivedDataType").as[String]
         val fieldTemplate = (template \ "field")
         val field = fieldTemplate.as[JsObject] + ("name" -> JsString(name)) +
           ("_id" -> JsNumber(y)) +
-          ("dataType" -> JsString(nativeDataType)) +
+          ("dataType" -> JsString(nativeDataType.getOrElse(derivedDataType))) +
           ("derivedDataType" -> JsString(derivedDataType)) +
           ("origName" -> JsString(name)) +
-          ("origDataType" -> JsString(nativeDataType))
+          ("origDataType" -> JsString(nativeDataType.getOrElse(derivedDataType)))
         val policie = Json.obj("name" -> name,
           "profile" -> false,
           "standardization" -> JsNull,
