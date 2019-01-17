@@ -110,13 +110,15 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     }
   }
 
-  def catalogByName(name :String, groups: List[String]): Option[MetaCatalog] = {
+  def catalogByName(name :String, user: String, groups: List[String]): Option[MetaCatalog] = {
     import mongodb.casbah.query.Imports._
 
     val queryPrivate = $and(
       MongoDBObject("dcatapit.name" -> name),
-      $or("dcatapit.owner_org" $in groups, "operational.acl.groupName" $in groups),
-      MongoDBObject("dcatapit.privatex" -> true)
+      $or(
+        $and(MongoDBObject("dcatapit.privatex" -> true), MongoDBObject("dcatapit.author" -> user)),
+        "operational.acl.groupName" $in groups
+      )
     )
     val queryPub = $and(MongoDBObject("dcatapit.name" -> name), MongoDBObject("dcatapit.privatex" -> false))
     val query = $or(queryPub, queryPrivate)

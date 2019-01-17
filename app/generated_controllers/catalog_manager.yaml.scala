@@ -50,7 +50,7 @@ import it.gov.daf.catalogmanager.nifi.Nifi
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-    
+        
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -376,8 +376,8 @@ package catalog_manager.yaml {
         val datasetcatalogbyname = datasetcatalogbynameAction { (name: String) =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.datasetcatalogbyname
             RequestContext.execInContext[Future[DatasetcatalogbynameType[T] forSome { type T }]]("datasetcatalogbyname") { () =>
-                val groups = CredentialManager.readCredentialFromRequest(currentRequest).groups.toList
-                val catalog = ServiceRegistry.catalogService.catalogByName(name, groups)
+                val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
+                val catalog = ServiceRegistry.catalogService.catalogByName(name, credentials.username, credentials.groups.toList)
 
                 /*
                 val resutl  = catalog match {

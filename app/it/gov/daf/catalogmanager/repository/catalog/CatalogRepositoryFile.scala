@@ -131,7 +131,7 @@
     }
 
 
-    def catalogByName(name :String, groups: List[String]): Option[MetaCatalog] = {
+    def catalogByName(name :String, user: String, groups: List[String]): Option[MetaCatalog] = {
       println(name)
       println("####################")
       val file: File = Environment.simple().getFile("data/data-mgt/data_test.json")
