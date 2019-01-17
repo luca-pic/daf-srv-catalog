@@ -90,7 +90,7 @@ class CatalogRepositoryDev extends CatalogRepository{
 
   }
 
-  def catalogByName(catalogByName :String, groups: List[String]): Option[MetaCatalog] = {
+  def catalogByName(catalogByName :String, user: String, groups: List[String]): Option[MetaCatalog] = {
     // MetaCatalog(datasetCatalog,operational,conversion,dcat)
     for {
       dc <- datasetCatalog
