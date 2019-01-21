@@ -77,14 +77,14 @@ object KyloTrasformers {
     val result = inferred.value.zipWithIndex.map {
       case (x, y) => {
         val name = (x \ "name").as[String]
-        val nativeDataType = (x \ "nativeDataType").as[String]
+        val nativeDataType = (x \ "nativeDataType").asOpt[String]
         val derivedDataType = (x \ "derivedDataType").as[String]
         val field = template.as[JsObject] + ("name" -> JsString(name)) +
           ("_id" -> JsNumber(y)) +
-          ("dataType" -> JsString(nativeDataType)) +
+          ("dataType" -> JsString(nativeDataType.getOrElse(derivedDataType))) +
           ("derivedDataType" -> JsString(derivedDataType)) +
           ("origName" -> JsString(name)) +
-          ("origDataType" -> JsString(nativeDataType))
+          ("origDataType" -> JsString(nativeDataType.getOrElse(derivedDataType)))
         field
       }
     }
@@ -97,15 +97,15 @@ object KyloTrasformers {
     val result = inferred.value.zipWithIndex.map {
       case (x, y) => {
         val name = (x \ "name").as[String]
-        val nativeDataType = (x \ "nativeDataType").as[String]
+        val nativeDataType = (x \ "nativeDataType").asOpt[String]
         val derivedDataType = (x \ "derivedDataType").as[String]
         val fieldTemplate = (template \ "field")
         val field = fieldTemplate.as[JsObject] + ("name" -> JsString(name)) +
           ("_id" -> JsNumber(y)) +
-          ("dataType" -> JsString(nativeDataType)) +
+          ("dataType" -> JsString(nativeDataType.getOrElse(derivedDataType))) +
           ("derivedDataType" -> JsString(derivedDataType)) +
           ("origName" -> JsString(name)) +
-          ("origDataType" -> JsString(nativeDataType))
+          ("origDataType" -> JsString(nativeDataType.getOrElse(derivedDataType)))
         val policie = Json.obj("name" -> name,
           "profile" -> false,
           "standardization" -> JsNull,
@@ -194,6 +194,13 @@ object KyloTrasformers {
     val feedName = metaCatalog.dcatapit.holder_identifier.get + "_o_" + metaCatalog.dcatapit.name
     val org = metaCatalog.dcatapit.holder_identifier.get
     val kyloSchema = Json.parse(metaCatalog.dataschema.kyloSchema.get)
+    // Test for only one dependent feed
+    // TODO handle multiple sources and open data
+    val sourceString = metaCatalog.operational.type_info.get.sources.get.head
+    val source = Json.parse(sourceString)
+    val dependentOrg = (source \ "owner_org").as[String]
+    val dependentName = (source \ "name").as[String]
+    val dependentFeed = s"$dependentOrg.$dependentOrg" + "_o_" + dependentName
     __.json.update(
       (__ \ 'feedName).json.put(JsString(feedName)) and
         (__ \ 'systemFeedName).json.put(JsString(feedName)) and
@@ -215,7 +222,7 @@ object KyloTrasformers {
               case "Dependent Feeds" => obj.transform(__.json.update(
                 (__ \ "values").json.update(
                   of[JsArray].map { case JsArray(arr) => {
-                    val d = arr.map((_.as[JsObject] + ("label" -> JsString("new_org2.new_org2_o_botteghe_trento")) + ("value" -> JsString("new_org2.new_org2_o_botteghe_trento"))))
+                    val d = arr.map((_.as[JsObject] + ("label" -> JsString(dependentFeed)) + ("value" -> JsString(dependentFeed))))
                     JsArray(d)
                   }
                   }
@@ -238,7 +245,7 @@ object KyloTrasformers {
 
           val result: JsValue = (x.as[JsObject] +
             ("properties" -> JsArray(propsObj))) +
-            ("propertyValuesDisplayString" -> JsString(" Dependent Feeds: new_org2.new_org2_o_botteghe_trento")) +
+            ("propertyValuesDisplayString" -> JsString(s" Dependent Feeds: $dependentFeed")) +
             ("groups" -> JsArray(trasformedGroup)) +
             ("ruleType" -> rules)
           result
@@ -281,15 +288,22 @@ object KyloTrasformers {
       }
       }
 
+    )  andThen (__ \ "dataTransformation").json.update(
+      (__ \ "sql").json.put(JsString(querySqlToSparkSnippet(metaCatalog)._1)) and
+        (__ \ "dataTransformScript").json.put(JsString(querySqlToSparkSnippet(metaCatalog)._2))
+    reduce
     ) andThen (__ \ "dataTransformation" \ "$selectedColumnsAndTables").json.update(
       of[JsArray].map { case JsArray(arr) => {
         val inferred = (kyloSchema \ "fields").as[JsArray]
+        //val tableName = metaCatalog.operational.theme + "__" + metaCatalog.operational.subtheme + "." + dependentOrg + "_o_" + dependentName
         val result = inferred.value.map(x => {
           val name = (x \ "name").as[String]
           Json.obj(
             "column" -> name,
             "alias" -> "tbl10",
-            "tableName" -> "tran__marittimo.new_org2_o_botteghe_trento",
+            //"tableName" -> "tran__marittimo.new_org2_o_botteghe_trento",
+            // Maybe error but i believe kylo does not use it
+            "tableName" -> dependentFeed,
             "tableColumn" -> name)
         })
         JsArray(result)
@@ -297,11 +311,7 @@ object KyloTrasformers {
 
       }
 
-    ) andThen (__ \ "dataTransformation").json.update(
-      (__ \ "sql").json.put(JsString(querySqlToSparkSnippet(metaCatalog)._1)) and
-        (__ \ "dataTransformScript").json.put(JsString(querySqlToSparkSnippet(metaCatalog)._2))
-    reduce
-    )  andThen (__ \ 'userProperties).json.update(
+    )andThen (__ \ 'userProperties).json.update(
       of[JsArray].map{ case JsArray(arr) => buildUserProperties(arr, metaCatalog, "derived") }
     )
   }

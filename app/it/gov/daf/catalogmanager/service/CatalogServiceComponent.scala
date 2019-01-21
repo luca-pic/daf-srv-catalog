@@ -31,8 +31,8 @@ trait CatalogServiceComponent {
       catalogRepository.internalCatalogByName(name)
     }
 
-    def catalogByName(name :String, groups: List[String]): Option[MetaCatalog] = {
-      catalogRepository.catalogByName(name, groups)
+    def catalogByName(name :String, user: String, groups: List[String]): Option[MetaCatalog] = {
+      catalogRepository.catalogByName(name, user, groups)
     }
 
     def publicCatalogByName(name :String): Option[MetaCatalog] = {

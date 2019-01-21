@@ -14,6 +14,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import catalog_manager.yaml.{DatasetNameFieldsFields, Error, MetaCatalog}
 import it.gov.daf.catalogmanager.json
+import it.gov.daf.catalogmanager.kylo.KyloTrasformers.{buildUserProperties}
 import play.Environment
 import play.api.libs.ws._
 import play.api.libs.ws.ahc.AhcWSClient
@@ -50,7 +51,7 @@ val metaCatalog: MetaCatalog = metacatalogTemplate.validate[MetaCatalog].get
 
 val query_sql = metaCatalog.operational.type_info.get.query_sql.get
 
-def querySqlToSparkSnippet(metaCatalog: MetaCatalog) :String = {
+def querySqlToSparkSnippet(metaCatalog: MetaCatalog) :(String, String) = {
   val specialChar = "`"
   val querySql = metaCatalog.operational.type_info.get.query_sql.get
   val queryJson: JsValue = Json.parse(metaCatalog.operational.type_info.get.query_json.get)
@@ -66,20 +67,20 @@ def querySqlToSparkSnippet(metaCatalog: MetaCatalog) :String = {
   println(querySql)
   val startingIndex = querySql.split("\\.")
   val db = startingIndex(0).substring(startingIndex(0).lastIndexOf(" ") + 1,
-                            startingIndex(0).length)
+    startingIndex(0).length)
   val table = startingIndex(1).substring(0,
-            startingIndex(1).indexOf(" "))
+    startingIndex(1).indexOf(" "))
 
   val from = specialChar + db + specialChar + "." +
     specialChar + table + specialChar
-  /*sourcesJson.map(x => {
-    val source = Json.parse(x)
-    val name = (source \ "name").as[String]
-    val startingIndex = querySql.indexOf(".")
-    val finalIndex = x.toCharArray
-  })*/
+
+  //val startTrasformSql = """import org.apache.spark.sql._ var df = sqlContext.sql(" """
+  //val endTrasformSql = """ ") df = df df """
+  val startTrasformSql = "import org.apache.spark.sql._; var df = sqlContext.sql(\" "
+  val endTrasformSql = " \"); df = df; df "
+
   query = query.replace(db + "." + table, from)
-  query
+  (query, startTrasformSql + query + endTrasformSql)
 }
 
 querySqlToSparkSnippet(metaCatalog)
@@ -151,18 +152,25 @@ def tablePoliciesFields(template :JsValue, inferredSchema :JsValue) : JsArray = 
 def feedTrasformationTemplate(metaCatalog: MetaCatalog, category :JsValue): Reads[JsObject] = {
   val feedName = metaCatalog.dcatapit.holder_identifier.get + "_o_" + metaCatalog.dcatapit.name
   val org = metaCatalog.dcatapit.holder_identifier.get
-  val kyloSchema  = Json.parse(metaCatalog.dataschema.kyloSchema.get)
+  val kyloSchema = Json.parse(metaCatalog.dataschema.kyloSchema.get)
+  // Test for only one dependent feed
+  // TODO handle multiple sources and open data
+  val sourceString = metaCatalog.operational.type_info.get.sources.get.head
+  val source = Json.parse(sourceString)
+  val dependentOrg = (source \ "owner_org").as[String]
+  val dependentName = (source \ "name").as[String]
+  val dependentFeed = s"$dependentOrg.$dependentOrg" + "_o_" + dependentName
   __.json.update(
     (__ \ 'feedName).json.put(JsString(feedName)) and
       (__ \ 'systemFeedName).json.put(JsString(feedName)) and
       (__ \ 'category).json.put(
         Json.obj("id" -> (category \ "id").as[String],
-        "name" ->  (category \ "name").as[String],
-        "systemName" -> (category \ "systemName").as[String]))
+          "name" -> (category \ "name").as[String],
+          "systemName" -> (category \ "systemName").as[String]))
       reduce
   ) andThen (__ \ "schedule" \ "preconditions").json.update(
     of[JsArray].map { case JsArray(arr) => {
-       val finalResults = arr.map(x => {
+      val finalResults = arr.map(x => {
         val props = (x \ "properties").as[JsArray]
         val properties = props.value.map(obj => {
           val name = (obj \ "name").as[String]
@@ -171,13 +179,13 @@ def feedTrasformationTemplate(metaCatalog: MetaCatalog, category :JsValue): Read
               (__ \ "value").json.put(JsString(org + "." + feedName))
             ))
             case "Dependent Feeds" => obj.transform(__.json.update(
-                (__ \ "values").json.update(
-                  of[JsArray].map { case JsArray(arr) => {
-                    val d = arr.map((_.as[JsObject] + ("label" -> JsString("new_org2.new_org2_o_botteghe_trento")) + ("value" -> JsString("new_org2.new_org2_o_botteghe_trento"))))
-                    JsArray(d)
-                  }
-                  }
-                )
+              (__ \ "values").json.update(
+                of[JsArray].map { case JsArray(arr) => {
+                  val d = arr.map((_.as[JsObject] + ("label" -> JsString(dependentFeed)) + ("value" -> JsString(dependentFeed))))
+                  JsArray(d)
+                }
+                }
+              )
             ))
             case _ => JsSuccess(obj.as[JsObject])
           }
@@ -186,20 +194,20 @@ def feedTrasformationTemplate(metaCatalog: MetaCatalog, category :JsValue): Read
         val propsObj = properties.map(_.get)
 
         val groups = (x \ "groups").as[JsArray]
-         val trasformedGroup= groups.value.map(group => {
-            val d = group.as[JsObject] + ("properties" -> JsArray(propsObj))
-           d
-         })
+        val trasformedGroup = groups.value.map(group => {
+          val d = group.as[JsObject] + ("properties" -> JsArray(propsObj))
+          d
+        })
 
-         val rules =  (x \ "ruleType").as[JsObject] + ("properties" -> JsArray(propsObj)) + ("groups" -> JsArray(trasformedGroup))
+        val rules = (x \ "ruleType").as[JsObject] + ("properties" -> JsArray(propsObj)) + ("groups" -> JsArray(trasformedGroup))
 
 
-         val result: JsValue = (x.as[JsObject] +
+        val result: JsValue = (x.as[JsObject] +
           ("properties" -> JsArray(propsObj))) +
-          ("propertyValuesDisplayString" -> JsString(" Dependent Feeds: new_org2.new_org2_o_botteghe_trento")) +
+          ("propertyValuesDisplayString" -> JsString(s" Dependent Feeds: $dependentFeed")) +
           ("groups" -> JsArray(trasformedGroup)) +
-         ("ruleType" -> rules)
-         result
+          ("ruleType" -> rules)
+        result
 
       })
       JsArray(finalResults)
@@ -207,58 +215,63 @@ def feedTrasformationTemplate(metaCatalog: MetaCatalog, category :JsValue): Read
     }
   ) andThen (__ \ "table" \ "tableSchema").json.update(
     (__ \ "name").json.put(JsString(feedName))
-  ) andThen(__ \ "table" \ "tableSchema" \ "fields").json.update(
+  ) andThen (__ \ "table" \ "tableSchema" \ "fields").json.update(
     of[JsArray].map { case JsArray(arr) => {
       val template = arr.head
-      val fields = tableFields(template,kyloSchema)
+      val fields = tableFields(template, kyloSchema)
       fields
     }
     }
 
-  ) andThen(__ \ "table" \ "sourceTableSchema" \ "fields").json.update(
+  ) andThen (__ \ "table" \ "sourceTableSchema" \ "fields").json.update(
     of[JsArray].map { case JsArray(arr) => {
       val template = arr.head
-      val fields = tableFields(template,kyloSchema)
+      val fields = tableFields(template, kyloSchema)
       fields
     }
     }
 
-  )andThen(__ \ "table" \ "feedTableSchema" \ "fields").json.update(
+  ) andThen (__ \ "table" \ "feedTableSchema" \ "fields").json.update(
     of[JsArray].map { case JsArray(arr) => {
       val template = arr.head
-      val fields = tableFields(template,kyloSchema)
+      val fields = tableFields(template, kyloSchema)
       fields
     }
     }
 
-  ) andThen(__ \ "table" \ "fieldPolicies").json.update(
+  ) andThen (__ \ "table" \ "fieldPolicies").json.update(
     of[JsArray].map { case JsArray(arr) => {
       val template = arr.head
-      val fields = tablePoliciesFields(template,kyloSchema)
+      val fields = tablePoliciesFields(template, kyloSchema)
       fields
     }
     }
 
-  ) andThen(__ \ "dataTransformation" \ "$selectedColumnsAndTables").json.update(
+  )  andThen (__ \ "dataTransformation").json.update(
+    (__ \ "sql").json.put(JsString(querySqlToSparkSnippet(metaCatalog)._1)) and
+      (__ \ "dataTransformScript").json.put(JsString(querySqlToSparkSnippet(metaCatalog)._2))
+      reduce
+  ) andThen (__ \ "dataTransformation" \ "$selectedColumnsAndTables").json.update(
     of[JsArray].map { case JsArray(arr) => {
       val inferred = (kyloSchema \ "fields").as[JsArray]
-      val result = inferred.value.map( x => {
+      val tableName = metaCatalog.operational.theme + "__" + metaCatalog.operational.subtheme + "." + dependentFeed
+      val result = inferred.value.map(x => {
         val name = (x \ "name").as[String]
         Json.obj(
-        "column"-> name,
-        "alias" -> "tbl10",
-        "tableName"-> "tran__marittimo.new_org2_o_botteghe_trento",
-        "tableColumn" -> name)
+          "column" -> name,
+          "alias" -> "tbl10",
+          "tableName" -> "tran__marittimo.new_org2_o_botteghe_trento",
+          "tableName" -> tableName,
+          "tableColumn" -> name)
       })
       JsArray(result)
     }
 
     }
 
+  )andThen (__ \ 'userProperties).json.update(
+    of[JsArray].map{ case JsArray(arr) => buildUserProperties(arr, metaCatalog, "derived") }
   )
-
-
-
 }
 
 

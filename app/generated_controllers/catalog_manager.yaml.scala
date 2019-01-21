@@ -50,7 +50,7 @@ import it.gov.daf.catalogmanager.nifi.Nifi
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-            
+        
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -376,8 +376,8 @@ package catalog_manager.yaml {
         val datasetcatalogbyname = datasetcatalogbynameAction { (name: String) =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.datasetcatalogbyname
             RequestContext.execInContext[Future[DatasetcatalogbynameType[T] forSome { type T }]]("datasetcatalogbyname") { () =>
-                val groups = CredentialManager.readCredentialFromRequest(currentRequest).groups.toList
-                val catalog = ServiceRegistry.catalogService.catalogByName(name, groups)
+                val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
+                val catalog = ServiceRegistry.catalogService.catalogByName(name, credentials.username, credentials.groups.toList)
 
                 /*
                 val resutl  = catalog match {
@@ -444,6 +444,14 @@ package catalog_manager.yaml {
                     }
                     else{
                         Logger.logger.debug(s"error in create catalog ${catalog.dcatapit.name}")
+                        Createdatasetcatalog500(created.left.get)
+                    }
+                    if(created.isRight){
+                        Logger.logger.debug(s"${credentials.username} added ${catalog.dcatapit.name.get}")
+                        Createdatasetcatalog200(created.right.get)
+                    }
+                    else{
+                        Logger.logger.debug(s"error in create catalog ${catalog.dcatapit.name.get}")
                         Createdatasetcatalog500(created.left.get)
                     }
 
@@ -820,6 +828,7 @@ package catalog_manager.yaml {
                     val feedCreation = ws.url(KYLOURL + "/api/v1/feedmgr/feeds")
                       .withAuth(KYLOUSER, KYLOPWD, WSAuthScheme.BASIC)
 
+
                     val feedData = for {
                         category <- categoryFuture
                         trasformed <- Future(kyloTemplate.transform(
@@ -938,14 +947,6 @@ package catalog_manager.yaml {
            // NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.startKyloFedd
         }
-    
-     // Dead code for absent methodCatalog_managerYaml.getvocFieldsGetall
-     /*
-            // ----- Start of unmanaged code area for action  Catalog_managerYaml.getvocFieldsGetall
-            NotImplementedYet
-            // ----- End of unmanaged code area for action  Catalog_managerYaml.getvocFieldsGetall
-     */
-
     
     }
 }
