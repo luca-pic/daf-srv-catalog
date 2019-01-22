@@ -34,9 +34,6 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
       resp =>
         val json: JsValue = Try(resp.json).getOrElse(JsNull)
         val id = (json \ "feedId").getOrElse(JsNull).toString().replace("\"", "")
-//        val creator = (json \ "userProperties" \\ "value").map(v => v.toString().replace("\"", ""))
-        //if(creator.contains(user)) Right(id)
-        //else Left(Error("error in get info", Some(400), None))
         if(id.nonEmpty) Right(id)
         else Left(Error("feed not found", Some(404), None))
     }
@@ -46,17 +43,14 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
   def deleteFeed(feedName: String, user: String): Future[Either[Error, Success]] = {
     getFeedInfo(feedName, user).flatMap{
       case Right(idFeed) =>
-        disableFeed(idFeed)
-          .flatMap{_ => delete(idFeed)
-            .map{res =>
-              res.status match {
-                case 204 => Logger.logger.debug(s"$user deleted $feedName");     Right(Success(s"$feedName deleted", None))
-                case 404 => Logger.logger.debug(s"$feedName not found");         Right(Success(s"$feedName not found", None))
-                case _   => Logger.logger.debug(s"$user not deleted $feedName"); Left(Error(s"kylo feed $feedName ${res.statusText}", Some(res.status), None))
-              }
-            }
-          }
-      case Left(error) => Future.successful(Right(Success(error.message, None)))
+        for{
+          _ <- disableFeed(idFeed)
+          res <- patchDelete(user, feedName, idFeed)
+        } yield res
+//        disableFeed(idFeed).flatMap{_ =>
+//          patchDelete(user, feedName, idFeed)
+//        }
+      case Left(error) => Future.successful(Left(Error(error.message, error.code, None)))
     }
   }
 
@@ -80,16 +74,28 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
     futureResponseDisableFeed
   }
 
-  private def delete(feedId: String): Future[WSResponse] = {
+  private def patchDelete(user: String, feedName: String, feedId: String): Future[Either[Error, Success]] = {
+    val firstDelete: Future[Either[Error, Success]] = delete(user, feedName, feedId)
+
+    firstDelete flatMap {
+      case Right(success) => Future.successful(Right(success))
+      case Left(_) => Logger.debug("second call"); delete(user, feedName, feedId)
+    }
+
+  }
+
+  private def delete(user: String, feedName: String, feedId: String): Future[Either[Error, Success]] = {
     val futureResponseDelete: Future[WSResponse] = ws.url(KYLOURL + "/api/v1/feedmgr/feeds/" + feedId)
       .withAuth(KYLOUSER, KYLOPWD, WSAuthScheme.BASIC)
       .delete()
 
-    futureResponseDelete.onComplete { r =>
-      if (r.get.status == 204) Logger.logger.debug(s"$feedId deleted")
-      else Logger.logger.debug(s"$feedId not deleted")
+    futureResponseDelete.map{ res =>
+      res.status match {
+        case 204 => Logger.logger.debug(s"$user deleted $feedName");     Right(Success(s"$feedName deleted", None))
+        case 404 => Logger.logger.debug(s"$feedName not found");         Right(Success(s"$feedName not found", None))
+        case _   => Logger.logger.debug(s"$user not deleted $feedName"); Left(Error(s"kylo feed $feedName ${res.statusText}", Some(res.status), None))
+      }
     }
-    futureResponseDelete
   }
 
   private def templateIdByName(templateName :String): Future[Option[String]] = {
