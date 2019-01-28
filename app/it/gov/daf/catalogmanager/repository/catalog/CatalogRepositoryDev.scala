@@ -126,7 +126,7 @@ class CatalogRepositoryDev extends CatalogRepository{
     Future.successful(Right(Success("delete", None)))
   }
 
-  override def internalCatalogByName(name: String): Option[MetaCatalog] = None
+  override def internalCatalogByName(name: String, user: String, org: String): Option[MetaCatalog] = None
 
   def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetNameFields]] = {
     Future.successful(Seq[DatasetNameFields]())

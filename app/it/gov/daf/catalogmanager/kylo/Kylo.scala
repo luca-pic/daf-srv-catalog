@@ -1,13 +1,11 @@
 package it.gov.daf.catalogmanager.kylo
 
-import catalog_manager.yaml.{InputSrcSrv_pullOpt, MetaCatalog, SourceSftp}
-import play.api.libs.json.{JsObject, JsResult, JsValue}
-import catalog_manager.yaml.{Error, InputSrcSrv_pullOpt, MetaCatalog, Success}
+import play.api.libs.json.{JsObject, JsValue}
+import catalog_manager.yaml.{Error, MetaCatalog, Success}
 import play.api.libs.json._
 import play.api.libs.ws.{WSAuthScheme, WSClient, WSResponse}
 import com.google.inject.{Inject, Singleton}
 import play.api.Logger
-import play.libs.Json
 
 import scala.util.Try
 //import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos.HdfsFileStatusProto.FileType
@@ -25,7 +23,7 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
 
   import scala.concurrent.ExecutionContext.Implicits._
 
-  private def getFeedInfo(feedName: String, user: String): Future[Either[Error, String]] ={
+  private def getFeedInfo(feedName: String, user: String): Future[Either[Error, String]] = {
     val futureResponseFeedInfo = ws.url(KYLOURL + "/api/v1/feedmgr/feeds/by-name/" + feedName)
       .withAuth(KYLOUSER, KYLOPWD, WSAuthScheme.BASIC)
       .get()
@@ -47,9 +45,6 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
           _ <- disableFeed(idFeed)
           res <- patchDelete(user, feedName, idFeed)
         } yield res
-//        disableFeed(idFeed).flatMap{_ =>
-//          patchDelete(user, feedName, idFeed)
-//        }
       case Left(error) => Future.successful(Left(Error(error.message, error.code, None)))
     }
   }
@@ -79,7 +74,7 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
 
     firstDelete flatMap {
       case Right(success) => Future.successful(Right(success))
-      case Left(_) => Logger.debug("second call"); delete(user, feedName, feedId)
+      case Left(_) => Logger.debug("second call"); Thread.sleep(30000); delete(user, feedName, feedId)
     }
 
   }
@@ -92,8 +87,8 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
     futureResponseDelete.map{ res =>
       res.status match {
         case 204 => Logger.logger.debug(s"$user deleted $feedName");     Right(Success(s"$feedName deleted", None))
-        case 404 => Logger.logger.debug(s"$feedName not found");         Right(Success(s"$feedName not found", None))
-        case _   => Logger.logger.debug(s"$user not deleted $feedName"); Left(Error(s"kylo feed $feedName ${res.statusText}", Some(res.status), None))
+//        case 404 => Logger.logger.debug(s"$feedName not found");         Right(Success(s"$feedName not found", None))
+        case _   => Logger.logger.debug(s"$user not deleted $feedName"); Left(Error(s"kylo feed $feedName ${Try{(res.json \ "message").get.toString().replace("\"", "")}.getOrElse("no json found")}", Some(res.status), None))
       }
     }
   }
