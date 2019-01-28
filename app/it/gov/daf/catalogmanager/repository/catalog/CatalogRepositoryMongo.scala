@@ -89,8 +89,10 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     metaCatalog
   }
 
-  def internalCatalogByName(name: String) = {
-    val query = MongoDBObject("dcatapit.name" -> name)
+  def internalCatalogByName(name: String, user: String, org: String) = {
+    import mongodb.casbah.query.Imports._
+
+    val query = $and(MongoDBObject("dcatapit.name" -> name), MongoDBObject("dcatapit.author" -> user), MongoDBObject("dcatapit.owner_org" -> org))
     val mongoClient = MongoClient(server, List(credentials))
     val db = mongoClient(source)
     val coll = db("catalog_test")
