@@ -188,9 +188,14 @@ package catalog_manager.yaml {
 
                 def sendNotifications(user: String, datasetName: String, error: String, token: String) = {
                     //user notification
-                    sendGenericMessageToKafka(Some(user), None, "notification", "delete_error", s"Dataset $datasetName non cancellato", s"Non è stato possibile cancellare il dataset $datasetName, è stata contattata l'assistenza", None, token)
+                    val userNotification = sendGenericMessageToKafka(Some(user), None, "notification", "delete_error", s"Dataset $datasetName non cancellato", s"Non è stato possibile cancellare il dataset $datasetName, è stata contattata l'assistenza", None, token)
+
+                    userNotification onComplete( res => if(res.get.isRight) Logger.logger.debug(res.get.right.get.message) else Logger.logger.debug(res.get.left.get.message))
+
                     //admin notification
-                    sendGenericMessageToKafka(None, Some(DAF_ADMIN_GROUP), "notification", "delete_error", s"Dataset $datasetName non cancellato", error, None, token)
+                    val groupNotification = sendGenericMessageToKafka(None, Some(DAF_ADMIN_GROUP), "notification", "delete_error", s"Dataset $datasetName non cancellato", error, None, token)
+
+                    groupNotification onComplete( res => if(res.get.isRight) Logger.logger.debug(res.get.right.get.message) else Logger.logger.debug(res.get.left.get.message))
                 }
 
                 val credential = CredentialManager.readCredentialFromRequest(currentRequest)
