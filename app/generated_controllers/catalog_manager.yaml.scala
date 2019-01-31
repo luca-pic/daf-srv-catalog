@@ -50,7 +50,7 @@ import it.gov.daf.catalogmanager.nifi.Nifi
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-        
+                                            
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -75,6 +75,8 @@ package catalog_manager.yaml {
         val KYLOUSER = config.get.getString("kylo.user").getOrElse("dladmin")
         val KYLOPWD = config.get.getString("kylo.userpwd").getOrElse("XXXXXXXXXXX")
         val KAFKAPROXY = config.get.getString("kafkaProxy.url").get
+        val LOCAL_HOST = config.get.getString("app.local.url").get
+        val DAF_ADMIN_GROUP = config.get.getString("daf.adminGroup").get
 
         private def sendMessageKafkaProxy(user: String, catalog: String, token: String): Future[Either[Error, Success]] = {
             Logger.logger.debug(s"kafka proxy $KAFKAPROXY")
@@ -95,7 +97,7 @@ package catalog_manager.yaml {
             responseWs.map{ res =>
                 if( res.status == 200 ) {
                     Logger.logger.debug(s"message sent to kakfa proxy for user $user")
-                    Right(Success("created",Option("created")))
+                    Right(Success("sended", None))
                 }
                 else {
                     Logger.logger.debug(s"error in sending message to kafka proxy for user $user")
@@ -104,12 +106,10 @@ package catalog_manager.yaml {
             }
         }
 
-        private def sendGenericMessageToKafka(user: String, group: String, topic: String, notificationType: String, title: String, description: String, link: Option[String], token: String) ={
+        private def sendGenericMessageToKafka(group: Option[String], userToSend: Option[String], topic: String, notificationType: String, title: String, description: String, link: Option[String], token: String) ={
             Logger.logger.debug(s"kafka proxy $KAFKAPROXY, topic $topic")
-            val jsonUser: String = s""""user":"$user""""
-            val jsonToken = s""""token":"$token""""
             val message = s"""{
-                             |"records":[{"value":{"group":"$group","token":"$token","notificationtype": "$notificationType", "info":{
+                             |"records":[{"value":{"group":"${group.getOrElse(None)}", "user":"${userToSend.getOrElse(None)}", "token":"$token","notificationtype": "$notificationType", "info":{
                              |"title":"$title","description":"$description","link":"${link.getOrElse("")}"}}}]}""".stripMargin
 
             val jsonBody = Json.parse(message)
@@ -120,12 +120,12 @@ package catalog_manager.yaml {
 
             responseWs.map{ res =>
                 if( res.status == 200 ) {
-                    Logger.logger.debug(s"message sent to kakfa proxy for user $user in topic $topic")
-                    Right(Success("created",Option("created")))
+                    Logger.logger.debug(s"message sent to kakfa proxy for ${userToSend.getOrElse(group.get)} in topic $topic")
+                    Right(Success(s"${userToSend.getOrElse(group.get)} sent to kafka in topic $topic", None))
                 }
                 else {
-                    Logger.logger.debug(s"error in sending message to kafka proxy for user $user in topic $topic")
-                    Left(Error(s"error in sending message to kafka proxy for user $user", Some(500), None))
+                    Logger.logger.debug(s"error in sending message to kafka proxy for ${userToSend.getOrElse(group.get)} in topic $topic")
+                    Left(Error(s"error in sending message to kafka proxy for user ${userToSend.getOrElse(group.get)}", Some(500), None))
                 }
             }
         }
@@ -146,49 +146,6 @@ package catalog_manager.yaml {
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.autocompletedummy
             NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.autocompletedummy
-        }
-        val deleteCatalog = deleteCatalogAction { input: (String, String) =>
-            val (name, org) = input
-            // ----- Start of unmanaged code area for action  Catalog_managerYaml.deleteCatalog
-            RequestContext.execInContext[Future[DeleteCatalogType[T] forSome { type T }]]("deleteCatalog") { () =>
-                def extractMessage(response: Either[Error, Success]) = {
-                    if (response.isRight) response.right.get.message
-                    else response.left.get.message
-                }
-
-                def rollBackCatalog(catalog: MetaCatalog) ={
-                    logger.debug(s"rollback catalog on mongoDB: $catalog")
-                    val result: Either[Error, Success] = ServiceRegistry.catalogRepository.createCatalog(catalog, catalog.dcatapit.owner_org, ws)
-                    logger.debug(s"result rollback: $result")
-                }
-
-                val user = CredentialManager.readCredentialFromRequest(currentRequest).username
-
-                val feedName = s"$org.${org}_o_$name"
-
-                val token = readTokenFromRequest(currentRequest.headers, true)
-
-                val catalogToDelete = ServiceRegistry.catalogService.internalCatalogByName(name)
-
-                val futureResponseMongo = ServiceRegistry.catalogService.deleteCatalogByName(name, user, token.get, ws)
-
-                val futureResponseKylo = futureResponseMongo.flatMap {
-                    case Right(_) => kylo.deleteFeed(feedName, user)
-                    case Left(_) => Future.successful(Left(Error(s"$feedName not deleted", None, None)))
-                }
-
-                val futureResponses = for {
-                    responseKylo <- futureResponseKylo
-                    responseMongo <- futureResponseMongo
-                } yield if (responseMongo.isRight && responseKylo.isRight) Right(Success(s"${extractMessage(responseMongo)}, ${extractMessage(responseKylo)}", None)) else Left(Error(s"${extractMessage(responseMongo)}, ${extractMessage(responseKylo)}", Some(500), None))
-
-                futureResponses.flatMap {
-                    case Right(s) => DeleteCatalog200(s)
-                    case Left(e) => futureResponseMongo.map{ res => if(res.isRight)rollBackCatalog(catalogToDelete.get) }; DeleteCatalog500(e)
-                }
-            }
-//          NotImplementedYet
-            // ----- End of unmanaged code area for action  Catalog_managerYaml.deleteCatalog
         }
         val searchdataset = searchdatasetAction { input: (MetadataCat, MetadataCat, ResourceSize, ResourceSize) =>
             val (q, sort, rows, start) = input
@@ -213,6 +170,75 @@ package catalog_manager.yaml {
                 }
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.searchdataset
+        }
+        val deleteCatalog = deleteCatalogAction { input: (String, String) =>
+            val (datasetName, orgDataset) = input
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.deleteCatalog
+            RequestContext.execInContext[Future[DeleteCatalogType[T] forSome { type T }]]("deleteCatalog") { () =>
+                def callDeleteFromCkanGeo(isPrivate: Boolean, datasetId: String): Future[Either[Error, Success]] = {
+                  Logger.logger.debug(s"try to delete $datasetId, isPrivate $isPrivate")
+                  if(!isPrivate) {
+                      Logger.logger.debug(s"$datasetId is public")
+                      ws.url(s"$LOCAL_HOST/ckan/purgeDatasetCkanGeo/$datasetId").delete().map { res =>
+                          res.status match {
+                              case 200 => Logger.logger.debug(s"$datasetId deleted from ckan-geo"); Right(Success(s"$datasetId deleted", None))
+                              case _   => Logger.logger.debug(s"error in delete $datasetId from ckan-geo: ${res.body}"); Left(Error("ckan-geo resp: " + res.body, Some(res.status), None))
+                          }
+                      }
+                  }
+                  else Logger.logger.debug(s"$datasetId is private"); Future.successful(Right(Success("", None)))
+                }
+
+                def sendNotifications(user: String, datasetName: String, error: String, token: String) = {
+                    //user notification
+                    sendGenericMessageToKafka(None, Some(user), "notification", "delete_error", s"Dataset $datasetName non cancellato", s"Non è stato possibile cancellare il dataset $datasetName, è stata contattata l'assistenza", None, token)
+                    //admin notification
+                    sendGenericMessageToKafka(None, Some(DAF_ADMIN_GROUP), "notification", "delete_error", s"Dataset $datasetName non cancellato", error, None, token)
+                }
+
+                val credential = CredentialManager.readCredentialFromRequest(currentRequest)
+
+                val isSysAdmin = CredentialManager.isDafSysAdmin(currentRequest)
+
+                val user = credential.username
+
+                val groups = credential.groups.toList
+
+                val feedName = s"$orgDataset.${orgDataset}_o_$datasetName"
+
+                val token: Option[String] = readTokenFromRequest(currentRequest.headers, false)
+
+                if(token.isDefined && (groups.contains(orgDataset) || isSysAdmin)) {
+                      val catalogToDelete: Option[MetaCatalog] = ServiceRegistry.catalogService.internalCatalogByName(datasetName, user, orgDataset, isSysAdmin)
+                      catalogToDelete match {
+                          case Some(catalog) => {
+                              val globalResponse = kylo.deleteFeed(feedName, user) flatMap {
+                                  case Right(_) => {
+                                      callDeleteFromCkanGeo(catalog.dcatapit.privatex.getOrElse(false), datasetName) flatMap {
+                                          case Right(_) => {
+                                              val datasetOwner = isSysAdmin match {
+                                                  case false => user
+                                                  case true  => catalog.dcatapit.author.get
+                                              }
+                                              ServiceRegistry.catalogService.deleteCatalogByName(datasetName, datasetOwner, isSysAdmin, token.get, ws)
+                                          }
+                                          case Left(error) => Future.successful(Left(error))
+                                      }
+                                  }
+                                  case Left(error) => Future.successful(Left(error))
+                              }
+
+                              globalResponse.flatMap{
+                                  case Right(s)    => DeleteCatalog200(s)
+                                  case Left(error) => sendNotifications(user, datasetName, error.message, token.get); DeleteCatalog500(error)
+                              }
+                          }
+                          case None => DeleteCatalog404(Future.successful(Error(s"catalog $datasetName not found", None, None)))
+                      }
+                  }
+                else DeleteCatalog401(Future.successful(Error(s"Unauthorized to delete dataset $datasetName", None, None)))
+            }
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.deleteCatalog
         }
         val getDatasetStandardFields = getDatasetStandardFieldsAction {  _ =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.getDatasetStandardFields
@@ -467,8 +493,9 @@ package catalog_manager.yaml {
                 val cred = CredentialManager.readCredentialFromRequest(currentRequest)
                 token match {
                     case Some(t) => {
-                        sendGenericMessageToKafka(cred.username,
+                        sendGenericMessageToKafka(
                             kafkaMsgInfo.group,
+                            kafkaMsgInfo.user,
                             kafkaMsgInfo.topicName,
                             kafkaMsgInfo.notificationType,
                             kafkaMsgInfo.title,

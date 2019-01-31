@@ -358,24 +358,22 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  "/catalog-ds/delete/{name}/{org}":
+  "/catalog-ds/delete/{datasetName}/{orgDataset}":
     delete:
       summary: delete a DatasetCatalog
       description: delete DatasetCatalog identified by the name in path
       tags:
        - DatasetCatalog
       operationId: deleteCatalog
-      consumes:
-        - application/json
       produces:
         - application/json
       parameters:
-      - name: name
+      - name: datasetName
         in: path
         description: name of the dataset to delete
         required: true
         type: string
-      - name: org
+      - name: orgDataset
         in: path
         description: organization of the feed to delete
         required: true
@@ -386,6 +384,16 @@ paths:
           schema:
             type: object
             $ref: '#/definitions/Success'
+        401:
+          description: Error
+          schema:
+            type: object
+            $ref: '#/definitions/Error'
+        404:
+          description: Error
+          schema:
+            type: object
+            $ref: '#/definitions/Error'
         500:
           description: Error
           schema:
@@ -1531,7 +1539,6 @@ definitions:
       - description
       - notificationType
       - title
-      - group
     properties:
       title:
         type: string
@@ -1542,6 +1549,8 @@ definitions:
       notificationType:
         type: string
       group:
+        type: string
+      user:
         type: string
       link:
         type: string

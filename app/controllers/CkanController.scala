@@ -189,12 +189,12 @@ class CkanController @Inject() (wsc: WSClient, config: ConfigurationProvider, se
         if (r.status == 200)
           Logger.logger.debug(s"$user deleted $datasetId")
         else
-          Logger.logger.debug(s"$user not deleted $datasetId: ${(r.json \ "error").get}")
+          Logger.logger.debug(s"$user not deleted $datasetId: ${(r.json \ "error" \ "message").getOrElse(JsString("no error message"))}")
         r.status match {
           case 200 => Ok(r.body)
           case 404 => NotFound(r.body)
           case 409 => Conflict(r.body)
-          case _ => BadRequest(r.body)
+          case _   => BadRequest(r.body)
         }
       }
     }
