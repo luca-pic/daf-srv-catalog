@@ -161,7 +161,6 @@ class CatalogRepositoryMongo extends  CatalogRepository{
       .get()
 
     widgetsResp.map{ res =>
-      println(s"res.staut: ${res.status}, res.body: ${res.body}")
       if(res.status == 200 && !res.body.equals("[]")) Left(Error(s"is not possible delete catalog $nameCatalog, it has some widgets", Some(403), None))
       else if(res.status == 200) {
         val query = isSysAdmin match {
