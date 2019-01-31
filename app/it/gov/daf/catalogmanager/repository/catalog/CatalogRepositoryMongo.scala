@@ -139,7 +139,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
         val metaCatalogJs = json.validate[MetaCatalog]
         val metaCatalog = metaCatalogJs match {
           case s: JsSuccess[MetaCatalog] => Some(s.get)
-          case _: JsError => None
+          case e: JsError => Logger.logger.debug(s"error in validation: $e"); None
         }
         metaCatalog
       }
@@ -196,7 +196,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
         val metaCatalogJs = json.validate[MetaCatalog]
         val metaCatalog = metaCatalogJs match {
           case s: JsSuccess[MetaCatalog] => Some(s.get)
-          case e: JsError => println(e); None
+          case e: JsError => Logger.logger.debug(s"error in validation: $e"); None
         }
         metaCatalog
       }
