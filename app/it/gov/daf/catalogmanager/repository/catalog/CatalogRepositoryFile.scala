@@ -290,11 +290,11 @@
 
     def isDatasetOnCatalog(name :String) = None
 
-    def deleteCatalogByName(nameCatalog: String, user: String, token: String, wsClient: WSClient): Future[Either[Error, Success]] = {
+    def deleteCatalogByName(nameCatalog: String, user: String, isSysAdmin: Boolean, token: String, wsClient: WSClient): Future[Either[Error, Success]] = {
       Future.successful(Right(Success("delete", None)))
     }
 
-    override def internalCatalogByName(name: String): Option[MetaCatalog] = None
+    override def internalCatalogByName(name: String, user: String, org: String, isSysAdmin: Boolean): Option[MetaCatalog] = None
 
     def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetNameFields]] = {
       Future.successful(Seq[DatasetNameFields]())
