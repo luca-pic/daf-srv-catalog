@@ -193,7 +193,7 @@ package catalog_manager.yaml {
                     //user notification
                     sendGenericMessageToKafka(None, Some(user), "notification", "delete_error", s"Dataset $datasetName non cancellato", s"Non è stato possibile cancellare il dataset $datasetName, è stata contattata l'assistenza", None, token)
                     //admin notification
-                    sendGenericMessageToKafka(None, Some(DAF_ADMIN_GROUP), "notification", "delete_error", s"Dataset $datasetName non cancellato", error, None, token)
+                    sendGenericMessageToKafka(Some(DAF_ADMIN_GROUP), None, "notification", "delete_error", s"Dataset $datasetName non cancellato", error, None, token)
                 }
 
                 val credential = CredentialManager.readCredentialFromRequest(currentRequest)
