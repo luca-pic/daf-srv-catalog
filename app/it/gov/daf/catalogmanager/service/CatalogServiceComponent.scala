@@ -27,8 +27,8 @@ trait CatalogServiceComponent {
       catalogRepository.catalog(catalogId)
     }
 
-    def internalCatalogByName(name: String, user: String, org: String) = {
-      catalogRepository.internalCatalogByName(name, user, org)
+    def internalCatalogByName(name: String, user: String, org: String, isSysAdmin: Boolean, token: String, ws :WSClient): Future[Either[Error, MetaCatalog]] = {
+      catalogRepository.internalCatalogByName(name, user, org, isSysAdmin, token, ws)
     }
 
     def catalogByName(name :String, user: String, groups: List[String]): Option[MetaCatalog] = {
@@ -53,8 +53,8 @@ trait CatalogServiceComponent {
       catalogRepository.isDatasetOnCatalog(name)
     }
 
-    def deleteCatalogByName(nameCatalog: String, user: String, token: String, wsClient: WSClient): Future[Either[Error, Success]] = {
-      catalogRepository.deleteCatalogByName(nameCatalog, user, token: String, wsClient)
+    def deleteCatalogByName(nameCatalog: String, user: String, org: String, isSysAdmin: Boolean, token: String, wsClient: WSClient): Future[Either[Error, Success]] = {
+      catalogRepository.deleteCatalogByName(nameCatalog, user, org, isSysAdmin, token, wsClient)
     }
 
     def getDatasetStandardFields(user: String, groups: List[String]): Future[Seq[DatasetNameFields]] = {

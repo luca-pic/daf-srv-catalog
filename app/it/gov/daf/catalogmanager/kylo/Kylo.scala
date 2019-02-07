@@ -1,11 +1,13 @@
 package it.gov.daf.catalogmanager.kylo
 
-import play.api.libs.json.{JsObject, JsValue}
-import catalog_manager.yaml.{Error, MetaCatalog, Success}
+import catalog_manager.yaml.{InputSrcSrv_pullOpt, MetaCatalog, SourceSftp}
+import play.api.libs.json.{JsObject, JsResult, JsValue}
+import catalog_manager.yaml.{Error, InputSrcSrv_pullOpt, MetaCatalog, Success}
 import play.api.libs.json._
 import play.api.libs.ws.{WSAuthScheme, WSClient, WSResponse}
 import com.google.inject.{Inject, Singleton}
 import play.api.Logger
+import play.libs.Json
 
 import scala.util.Try
 //import org.apache.hadoop.hdfs.protocol.proto.HdfsProtos.HdfsFileStatusProto.FileType
@@ -31,9 +33,11 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
     val res = futureResponseFeedInfo.map{
       resp =>
         val json: JsValue = Try(resp.json).getOrElse(JsNull)
-        val id = (json \ "feedId").getOrElse(JsNull).toString().replace("\"", "")
-        if(id.nonEmpty) Right(id)
-        else Left(Error("feed not found", Some(404), None))
+        val id: Option[JsValue] = Try{Some((json \ "feedId").get)}.getOrElse(None)
+        id match {
+          case Some(x) => Logger.logger.debug(s"$feedName: $x"); Right(x.toString().replace("\"", ""))
+          case None    => Logger.logger.debug(s"id of $feedName not found"); Left(Error(s"feed $feedName not found", Some(404), None))
+        }
     }
     res
   }
@@ -45,7 +49,7 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
           _ <- disableFeed(idFeed)
           res <- patchDelete(user, feedName, idFeed)
         } yield res
-      case Left(error) => Future.successful(Left(Error(error.message, error.code, None)))
+      case Left(left) => Future.successful(Right(Success(left.message, None)))
     }
   }
 
@@ -74,7 +78,7 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
 
     firstDelete flatMap {
       case Right(success) => Future.successful(Right(success))
-      case Left(_) => Logger.debug("second call"); Thread.sleep(30000); delete(user, feedName, feedId)
+      case Left(_) => Logger.debug("second call"); Thread.sleep(10000); delete(user, feedName, feedId)
     }
 
   }
@@ -87,8 +91,8 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
     futureResponseDelete.map{ res =>
       res.status match {
         case 204 => Logger.logger.debug(s"$user deleted $feedName");     Right(Success(s"$feedName deleted", None))
-//        case 404 => Logger.logger.debug(s"$feedName not found");         Right(Success(s"$feedName not found", None))
-        case _   => Logger.logger.debug(s"$user not deleted $feedName"); Left(Error(s"kylo feed $feedName ${Try{(res.json \ "message").get.toString().replace("\"", "")}.getOrElse("no json found")}", Some(res.status), None))
+        case 404 => Logger.logger.debug(s"$feedName not found");         Right(Success(s"$feedName not found", None))
+        case _   => Logger.logger.debug(s"$user not deleted $feedName"); Left(Error(s"kylo feed $feedName ${Try{(res.json \ "message").get.toString().replace("\"", "")}.getOrElse("generic error")}", Some(res.status), None))
       }
     }
   }
