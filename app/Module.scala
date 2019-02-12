@@ -1,5 +1,5 @@
 import com.google.inject.{ AbstractModule, Singleton }
-import it.gov.daf.catalogmanager.listeners.{ IngestionListener, IngestionListenerImpl }
+//import it.gov.daf.catalogmanager.listeners.{ IngestionListener, IngestionListenerImpl }
 import it.gov.daf.common.sso.common.{ CacheWrapper, LoginClient }
 import it.gov.daf.common.sso.client.LoginClientRemote
 import org.slf4j.LoggerFactory
@@ -15,7 +15,7 @@ class Module (environment: Environment, configuration: Configuration) extends Ab
     logger.info { "executing module.." }
 
     // REMEMBER TO LEAVE COMMENT FOR DEALING WIth Ingestion of file
-    bind(classOf[IngestionListener]).to(classOf[IngestionListenerImpl]).asEagerSingleton()
+//    bind(classOf[IngestionListener]).to(classOf[IngestionListenerImpl]).asEagerSingleton()
 
     val cacheWrapper = new CacheWrapper(Option(30L), Option(0L))// cookie 30 min, credential not needed
     bind(classOf[CacheWrapper]).toInstance(cacheWrapper)

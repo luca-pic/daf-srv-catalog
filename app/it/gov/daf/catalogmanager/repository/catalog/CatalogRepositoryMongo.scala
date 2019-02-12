@@ -89,26 +89,72 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     metaCatalog
   }
 
-  def internalCatalogByName(name: String, user: String, org: String) = {
+  private def createQueryToDeleteCatalog(isSysAdmin: Boolean, name: String, user: String, org: String) = {
     import mongodb.casbah.query.Imports._
 
-    val query = $and(MongoDBObject("dcatapit.name" -> name), MongoDBObject("dcatapit.author" -> user), MongoDBObject("dcatapit.owner_org" -> org))
-    val mongoClient = MongoClient(server, List(credentials))
-    val db = mongoClient(source)
-    val coll = db("catalog_test")
-    val result = coll.findOne(query)
-    mongoClient.close()
-    result match {
-      case Some(catalog) => {
-        val jsonString = com.mongodb.util.JSON.serialize(catalog)
-        val json = Json.parse(jsonString)
-        val metaCatalogJs = json.validate[MetaCatalog]
-        metaCatalogJs match {
-          case s: JsSuccess[MetaCatalog] => Some(s.get)
-          case _: JsError => None
+    isSysAdmin match {
+      case false => $and(MongoDBObject("dcatapit.name" -> name), MongoDBObject("dcatapit.author" -> user), MongoDBObject("dcatapit.owner_org" -> org), "operational.acl.groupName" $exists false)
+      case true  => $and(MongoDBObject("dcatapit.name" -> name), MongoDBObject("dcatapit.owner_org" -> org), "operational.acl.groupName" $exists false)
+    }
+  }
+
+  private def canDeleteCatalog(isSysAdmin: Boolean, name: String, token: String, wsClient: WSClient, user: String) = {
+    val url = if(isSysAdmin) "/dati-gov/v1/dashboard/iframesByName/" + name + s"?user=$user" else "/dati-gov/v1/dashboard/iframesByName/" + name
+
+    val widgetsResp = wsClient.url(DATIPUBBLICI_HOST + url)
+      .withHeaders("Authorization" -> s"Bearer $token")
+      .get()
+
+    widgetsResp.map{ res =>
+      if(res.status == 200 && !res.body.equals("[]")) { Logger.debug(s"$name has some widgets"); false }
+      else if(res.status == 200) { Logger.debug(s"$name not has some widgets"); true }
+      else { Logger.debug(s"$name: Internal server error"); false }
+    }
+  }
+
+  def internalCatalogByName(name: String, user: String, org: String, isSysAdmin: Boolean, token: String, wsClient: WSClient): Future[Either[Error, MetaCatalog]] = {
+
+    canDeleteCatalog(isSysAdmin, name, token, wsClient, user).map{ booleanResp =>
+      if(booleanResp) {
+        val query = createQueryToDeleteCatalog(isSysAdmin, name, user, org)
+
+        val mongoClient = MongoClient(server, List(credentials))
+        val db = mongoClient(source)
+        val coll = db("catalog_test")
+        val result = coll.findOne(query)
+        mongoClient.close()
+        result match {
+          case Some(catalog) => {
+            val jsonString = com.mongodb.util.JSON.serialize(catalog)
+            val json = Json.parse(jsonString)
+            val metaCatalogJs = json.validate[MetaCatalog]
+            metaCatalogJs match {
+              case s: JsSuccess[MetaCatalog] => Logger.logger.debug(s"$name found"); Right(s.get)
+              case e: JsError => Logger.logger.debug(s"$name validation error: $e"); Left(Error(s"Internal server error", Some(500), None))
+            }
+          }
+          case _ => Left(Error(s"$name not found", Some(404), None))
         }
       }
-      case _ => None
+      else Left(Error(s"is not possible delete catalog $name, it has some widgets", Some(403), None))
+    }
+  }
+
+  def deleteCatalogByName(nameCatalog: String, user: String, org: String, isSysAdmin: Boolean, token: String, wsClient: WSClient): Future[Either[Error, Success]] = {
+
+    Logger.logger.debug(s"$user try to delete $nameCatalog")
+
+    canDeleteCatalog(isSysAdmin, nameCatalog, token, wsClient, user).map{ booleanResp =>
+      if(booleanResp){
+        val query = createQueryToDeleteCatalog(isSysAdmin, nameCatalog, user, org)
+        val mongoClient = MongoClient(server, List(credentials))
+        val db = mongoClient(source)
+        val coll = db("catalog_test")
+        val result = if(coll.remove(query).getN > 0) Right(Success(s"catalog $nameCatalog deleted", None)) else Left(Error(s"catalog $nameCatalog not found", Some(404), None))
+        mongoClient.close()
+        Logger.logger.debug(s"$nameCatalog deleted from catalog_test result: ${result.isRight}")
+        result
+      } else { Logger.logger.debug("mongo: connection error");Left(Error(s"connection error", Some(500), None)) }
     }
   }
 
@@ -136,36 +182,13 @@ class CatalogRepositoryMongo extends  CatalogRepository{
         val metaCatalogJs = json.validate[MetaCatalog]
         val metaCatalog = metaCatalogJs match {
           case s: JsSuccess[MetaCatalog] => Some(s.get)
-          case _: JsError => None
+          case e: JsError => Logger.logger.debug(s"error in validation: $e"); None
         }
         metaCatalog
       }
       case _ => None
     }
     metaCatalog
-  }
-
-  def deleteCatalogByName(nameCatalog: String, user: String, token: String, wsClient: WSClient): Future[Either[Error, Success]] = {
-    import mongodb.casbah.query.Imports.$and
-    import mongodb.casbah.commons.Imports._
-
-    val widgetsResp = wsClient.url(DATIPUBBLICI_HOST + "/dati-gov/v1/dashboard/iframesByName/" + nameCatalog)
-      .withHeaders("Authorization" -> token)
-      .get()
-
-    widgetsResp.map{ res =>
-      if(res.status == 200 && !res.body.equals("[]")) Left(Error(s"is not possible delete catalog $nameCatalog, it has some widgets", Some(403), None))
-      else if(res.status == 200) {
-        val query = $and(MongoDBObject("dcatapit.name" -> nameCatalog), MongoDBObject("dcatapit.author" -> user), "operational.acl.groupName" $exists false)
-        val mongoClient = MongoClient(server, List(credentials))
-        val db = mongoClient(source)
-        val coll = db("catalog_test")
-        val result = if(coll.remove(query).getN > 0) Right(Success(s"catalog $nameCatalog deleted", None)) else Left(Error(s"catalog $nameCatalog not found", Some(404), None))
-        mongoClient.close()
-        Logger.logger.debug(s"$user deleted $nameCatalog from catalog_test result: ${result.isRight}")
-        result
-      } else {Logger.logger.debug("connection error");Left(Error(s"connection error", Some(500), None))}
-    }
   }
 
   def publicCatalogByName(name :String): Option[MetaCatalog] = {
@@ -186,7 +209,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
         val metaCatalogJs = json.validate[MetaCatalog]
         val metaCatalog = metaCatalogJs match {
           case s: JsSuccess[MetaCatalog] => Some(s.get)
-          case _: JsError => None
+          case e: JsError => Logger.logger.debug(s"error in validation: $e"); None
         }
         metaCatalog
       }
