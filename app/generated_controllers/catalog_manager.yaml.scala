@@ -18,7 +18,6 @@ import scala.util._
 import javax.inject._
 
 import de.zalando.play.controllers.PlayBodyParsing._
-import it.gov.daf.catalogmanager.listeners.IngestionListenerImpl
 import it.gov.daf.catalogmanager.service.{CkanRegistry,ServiceRegistry}
 import play.api.libs.json._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -50,12 +49,12 @@ import it.gov.daf.catalogmanager.nifi.Nifi
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-                                                                                                                        
+                                                                                                                                                
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
 
-        ingestionListener : IngestionListenerImpl,
+//        ingestionListener : IngestionListenerImpl,
         val kylo :Kylo,
         val Nifi: Nifi,
         val configuration: Configuration,
@@ -322,22 +321,6 @@ package catalog_manager.yaml {
                 Voc_subthemesgetall200(subthemeList)
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.voc_subthemesgetall
-        }
-        val datasetcatalogs = datasetcatalogsAction { input: (MetadataRequired, Dataset_catalogsGetLimit) =>
-            val (page, limit) = input
-            // ----- Start of unmanaged code area for action  Catalog_managerYaml.datasetcatalogs
-            RequestContext.execInContext[Future[DatasetcatalogsType[T] forSome { type T }]]("datasetcatalogs") { () =>
-                val pageIng :Option[Int] = page
-                val limitIng :Option[Int] = limit
-                val catalogs = ServiceRegistry.catalogService.listCatalogs(page,limit)
-
-                catalogs match {
-                    case Seq() => Datasetcatalogs401("No data")
-                    case _ => Datasetcatalogs200(catalogs)
-                }
-            }
-            // Datasetcatalogs200(catalogs)
-            // ----- End of unmanaged code area for action  Catalog_managerYaml.datasetcatalogs
         }
         val voc_subthemesgetbyid = voc_subthemesgetbyidAction { (themeid: String) =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.voc_subthemesgetbyid
@@ -978,6 +961,24 @@ package catalog_manager.yaml {
            // NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.startKyloFedd
         }
+    
+     // Dead code for absent methodCatalog_managerYaml.datasetcatalogs
+     /*
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.datasetcatalogs
+            RequestContext.execInContext[Future[DatasetcatalogsType[T] forSome { type T }]]("datasetcatalogs") { () =>
+                val pageIng :Option[Int] = page
+                val limitIng :Option[Int] = limit
+                val catalogs = ServiceRegistry.catalogService.listCatalogs(page,limit)
+
+                catalogs match {
+                    case Seq() => Datasetcatalogs401("No data")
+                    case _ => Datasetcatalogs200(catalogs)
+                }
+            }
+            // Datasetcatalogs200(catalogs)
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.datasetcatalogs
+     */
+
     
     }
 }
