@@ -54,47 +54,47 @@ paths:
           description:  Will send `Authenticated` if authentication is successful, otherwise it will send `Unauthorized`
           schema:
             $ref: '#/definitions/Token'
-  "/dataset-catalogs":
-    get:
-      #security:
-      #- basicAuth: []
-      summary: DatasetCatalog
-      description: |
-        List of MetaCatalog stored
-      tags:
-        - DatasetCatalog
-      parameters:
-        - name: page
-          in: query
-          description: number of the page
-          required: false
-          type: integer
-          format: int32
-        - name: limit
-          in: query
-          description: maximum number of results to return
-          required: false
-          type: integer
-          format: int32
-          minimum: 1
-          maximum: 500
-      operationId: datasetcatalogs
-      responses:
-        200:
-          description: An array of MetaCatalog
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/MetaCatalog'
-        401:
-          description: |
-            No Catalogs found list empty
-          schema:
-            type: string
-        default:
-          description: Unexpected error
-          schema:
-            $ref: '#/definitions/Error'
+#  "/dataset-catalogs":
+#    get:
+#      #security:
+#      #- basicAuth: []
+#      summary: DatasetCatalog
+#      description: |
+#        List of MetaCatalog stored
+#      tags:
+#        - DatasetCatalog
+#      parameters:
+#        - name: page
+#          in: query
+#          description: number of the page
+#          required: false
+#          type: integer
+#          format: int32
+#        - name: limit
+#          in: query
+#          description: maximum number of results to return
+#          required: false
+#          type: integer
+#          format: int32
+#          minimum: 1
+#          maximum: 500
+#      operationId: datasetcatalogs
+#      responses:
+#        200:
+#          description: An array of MetaCatalog
+#          schema:
+#            type: array
+#            items:
+#              $ref: '#/definitions/MetaCatalog'
+#        401:
+#          description: |
+#            No Catalogs found list empty
+#          schema:
+#            type: string
+#        default:
+#          description: Unexpected error
+#          schema:
+#            $ref: '#/definitions/Error'
   "/dataset-catalogs/standard-uris":
     get:
       #security:
