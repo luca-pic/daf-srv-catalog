@@ -1,7 +1,6 @@
 package it.gov.daf.catalogmanager.kylo
 
-import catalog_manager.yaml.MetaCatalog
-import play.api.libs.functional.FunctionalBuilder
+import it.gov.daf.model.MetaCatalog
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._

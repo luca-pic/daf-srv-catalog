@@ -1,10 +1,10 @@
 object Versions {
 
-  lazy val defaultVersion = "2.0.22-SNAPSHOT"
+  lazy val defaultVersion = "3.0.1-SNAPSHOT"
 
   val playVersion = "2.5.14"
 
-  val swaggerUiVersion = "3.0.10"
+  val dafCommonVersion = "1.2.1"
 
-  val dafCommonVersion = "1.1.3-SNAPSHOT"
+  val circeVersion = "0.8.0"
 }

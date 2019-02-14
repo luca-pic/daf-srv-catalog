@@ -1,33 +1,33 @@
-import com.google.inject.{ AbstractModule, Singleton }
-//import it.gov.daf.catalogmanager.listeners.{ IngestionListener, IngestionListenerImpl }
-import it.gov.daf.common.sso.common.{ CacheWrapper, LoginClient }
+import com.google.inject.{AbstractModule, Singleton}
 import it.gov.daf.common.sso.client.LoginClientRemote
-import org.slf4j.LoggerFactory
-import play.api.{ Configuration, Environment }
+import it.gov.daf.common.sso.common.{CacheWrapper, LoginClient}
+import play.api.{Configuration, Environment, Logger}
 
 @Singleton
-class Module (environment: Environment, configuration: Configuration) extends AbstractModule {
+class Module(environment: Environment, configuration: Configuration) extends AbstractModule{
 
-  private val logger = LoggerFactory.getLogger("it.gov.daf.catalogmanager.Module")
 
-  def configure() = {
+  def configure(): Unit ={
 
-    logger.info { "executing module.." }
 
-    // REMEMBER TO LEAVE COMMENT FOR DEALING WIth Ingestion of file
-//    bind(classOf[IngestionListener]).to(classOf[IngestionListenerImpl]).asEagerSingleton()
+    Logger.debug("executing module..")
 
+    //bind[WSClient].toInstance("foo")
+    //bind[GuiceSpec.type].toInstance(GuiceSpec)
+
+//    bind(classOf[LoginClient]).to(classOf[LoginClientLocal])//for the initialization of SecuredInvocationManager
+//
     val cacheWrapper = new CacheWrapper(Option(30L), Option(0L))// cookie 30 min, credential not needed
     bind(classOf[CacheWrapper]).toInstance(cacheWrapper)
 
-    val securityManHost: Option[String] = configuration.getString("security.manager.host")
+    val securityManHost: Option[String] = configuration.getString("services.securityUrl")
     require(securityManHost.nonEmpty,"security.manager.host entry not provided")
 
     val loginClientRemote = new LoginClientRemote(securityManHost.get)
     bind(classOf[LoginClientRemote]).toInstance(loginClientRemote)
-    bind(classOf[LoginClient]).to(classOf[LoginClientRemote])// for the initialization of SecuredInvocationManager
-    //private val secInvokManager = SecuredInvocationManager.init( LoginClientRemote.init(SEC_MANAGER_HOST) )
-
+    bind(classOf[LoginClient]).to(classOf[LoginClientRemote])
   }
 
 }
+
+

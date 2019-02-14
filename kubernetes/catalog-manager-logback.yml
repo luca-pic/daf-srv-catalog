@@ -29,6 +29,7 @@ data:
         <logger name="application" level="DEBUG" />
         <logger name="it.gov.daf" level="DEBUG" />
         <logger name="controllers" level="DEBUG" />
+        <logger name="play.api.libs.circe" level="DEBUG" />
 
         <root level="WARN">
             <appender-ref ref="STDOUT" />
