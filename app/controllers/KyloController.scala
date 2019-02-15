@@ -55,7 +55,7 @@ class KyloController @Inject()(val playSessionStore: PlaySessionStore)
   @ApiImplicitParams(Array(
     new ApiImplicitParam(value = "MetaCatalog to save", name = "metacatalog",
       required = true, dataType = "it.gov.daf.model.MetaCatalog", paramType = "body")
-  )
+    )
   )
   def createKyloFeed(fileType: String) = Action.async(circe.json[MetaCatalog]) { implicit request =>
     execInContext[Future[Result]]("createKyloFeed") { () =>

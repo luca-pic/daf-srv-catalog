@@ -19,6 +19,8 @@ GET         /catalog-manager/v1/catalog-ds/tags                          control
 POST        /catalog-manager/v1/catalog-ds/linked/:name                  controllers.CatalogController.getLinkedDataset(name: String, limit: Option[Int])
 POST        /catalog-manager/v1/catalog-ds/kafka/notifications/add       controllers.CatalogController.sendToKafka
 
+POST        /catalog-manager/v1/kylo/feed/:fileType                      controllers.KyloController.createKyloFeed(fileType: String)
+
 GET         /catalog-manager/v1/nifi/start/:orgName/:datasetName         controllers.NifiControllers.startNifiProcessor(datasetName: String, orgName: String)
 
 POST        /catalog-manager/v1/ckan/add                                 controllers.CkanController.addCatalogCkanGeo
