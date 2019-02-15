@@ -2,16 +2,16 @@ package it.gov.daf.config
 
 import it.gov.daf.common.config.Read
 
-case class SerivicesConfig(datipubbliciUrl: String, securityUrl: String)
+case class ServicesConfig(datipubbliciUrl: String, securityUrl: String)
 
-object SerivicesConfig {
+object ServicesConfig {
 
   private def readConfig = Read.config { "services" }.!
 
   def readValues = for {
     datipubbliciUrl    <- Read.string{ "datipubbliciUrl" }.!
     securityUrl        <- Read.string{ "securityUrl" }.!
-  } yield SerivicesConfig(
+  } yield ServicesConfig(
     datipubbliciUrl = datipubbliciUrl,
     securityUrl = securityUrl
   )

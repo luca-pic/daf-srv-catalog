@@ -3,7 +3,7 @@ package it.gov.daf.catalogmanager.catalog
 import com.mongodb
 import com.mongodb.{DBObject, ServerAddress}
 import com.mongodb.casbah.{MongoClient, MongoCredential}
-import it.gov.daf.config.{MongoConfig, SerivicesConfig}
+import it.gov.daf.config.{MongoConfig, ServicesConfig}
 import javax.inject.Inject
 import play.api.{Configuration, Logger}
 import it.gov.daf.model._
@@ -22,7 +22,7 @@ import scala.util.{Failure, Success}
 
 class MongoRepository @Inject()(implicit configuration: Configuration) {
 
-  val servicesConfig: SerivicesConfig = SerivicesConfig.reader.read(configuration) match {
+  val servicesConfig: ServicesConfig = ServicesConfig.reader.read(configuration) match {
         case Failure(error) => throw ConfigReadException(s"Unable to read [services config]", error)
         case Success(config) => config
   }
