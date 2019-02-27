@@ -49,7 +49,7 @@ import it.gov.daf.catalogmanager.nifi.Nifi
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-                                                                                                                                                
+                                                                                                                                                    
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -947,7 +947,7 @@ package catalog_manager.yaml {
                         case e: JsError => throw new Exception(JsError.toJson(e).toString())
                     }
 
-                    createFeed onComplete (r => Logger.logger.debug(s"kyloResp: ${r.get.status}"))
+                    createFeed onComplete (r => Logger.logger.debug(s"kyloResp ${r.get.status}: ${r.get.body}"))
 
                     val result = createFeed.flatMap {
                         // Assuming status 200 (OK) is a valid result for you.
