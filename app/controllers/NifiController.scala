@@ -14,7 +14,7 @@ import play.api.libs.ws.WSClient
 
 import scala.concurrent.Future
 
-class NifiControllers @Inject() (val playSessionStore: PlaySessionStore)(implicit ws: WSClient, configuration: Configuration) extends Controller with Circe {
+class NifiController @Inject()(val playSessionStore: PlaySessionStore)(implicit ws: WSClient, configuration: Configuration) extends Controller with Circe {
 
   Authentication(configuration, playSessionStore)
 

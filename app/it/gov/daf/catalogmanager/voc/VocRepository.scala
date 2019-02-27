@@ -77,7 +77,7 @@ class VocRepository {
         Future.successful(Left(Error(Some(500), "Internal Server Error", None)))
     }
   }
-  def daf2dcatSubtheme(dafThemeId: String, dafSubthemeId: String = "__-1NOFILTER__"): Future[Either[Error, Seq[VocKeyValueSubtheme]] = {
+  def daf2dcatSubtheme(dafThemeId: String, dafSubthemeId: String = "__-1NOFILTER__"): Future[Either[Error, Seq[VocKeyValueSubtheme]]] = {
     val stream = new FileInputStream("data/voc/cv_theme-subtheme_bk.json")
     val json = try { (Json.parse(stream) \ "voc").asOpt[JsArray]} finally {stream.close()}
 
@@ -143,7 +143,7 @@ class VocRepository {
         Future.successful(Left(Error(Some(500), "Internal Server Error", None)))
     }
   }
-  def listDcatSubtheme(dcatapitThemeId: String): Future[Either[Error, Seq[KeyValue]] = {
+  def listDcatSubtheme(dcatapitThemeId: String): Future[Either[Error, Seq[KeyValue]]] = {
     val stream = new FileInputStream("data/voc/cv_theme-subtheme_bk.json")
     val json = try { (Json.parse(stream) \ "voc").asOpt[JsArray]} finally {stream.close()}
 

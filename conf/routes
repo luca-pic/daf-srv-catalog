@@ -20,20 +20,20 @@ POST        /catalog-manager/v1/catalog-ds/linked/:name                  control
 POST        /catalog-manager/v1/catalog-ds/kafka/notifications/add       controllers.CatalogController.sendToKafka
 GET         /voc/fields/getall                                           controllers.CatalogController.getFieldsVoc
 
-GET         /voc/themes/getall/                                          controllers.VocControllers.vocThemesGetAll
-GET         /voc/subthemes/getall/                                       controllers.VocControllers.vocSubthemesGetAll
-GET         /voc/subthemes/getbyid/:themeId                              controllers.VocControllers.vocSubthemesGetById(themeId: String)
-GET         /voc/themes/dcat2daf/:themeId                                controllers.VocControllers.vocDcat2DafTheme(themeId: String)
-GET         /voc/subthemes/dcat2daf/:themeId/:subthemeId                 controllers.VocControllers.vocDcat2DafSubtheme(themeId: String, subthemeId: String)
-GET         /voc/dcatthemes/getall                                       controllers.VocControllers.vocDcatThemeGetAll
-GET         /voc/dcatsubthemes/getall/                                   controllers.VocControllers.vocDcatSubthemesGetAll
-GET         /voc/dcatsubthemes/getbyid/:dcatapitThemeId                  controllers.VocControllers.vocDcatSubthemesGetById(themeId: dcatapitThemeId)
-GET         /voc/dcatthemes/daf2dcat/:themeId                            controllers.VocControllers.vocDaf2DcatTheme(themeId: String)
-GET         /voc/dcatsubthemes/daf2dcat/:themeId/:subthemeId             controllers.VocControllers.vocDaf2DcatSubtheme(themeId: String, subthemeId: String)
+GET         /voc/themes/getall/                                          controllers.VocController.vocThemesGetAll
+GET         /voc/subthemes/getall/                                       controllers.VocController.vocSubthemesGetAll
+GET         /voc/subthemes/getbyid/:themeId                              controllers.VocController.vocSubthemesGetById(themeId: String)
+GET         /voc/themes/dcat2daf/:themeId                                controllers.VocController.vocDcat2DafTheme(themeId: String)
+GET         /voc/subthemes/dcat2daf/:themeId/:subthemeId                 controllers.VocController.vocDcat2DafSubtheme(themeId: String, subthemeId: String)
+GET         /voc/dcatthemes/getall                                       controllers.VocController.vocDcatThemeGetAll
+GET         /voc/dcatsubthemes/getall/                                   controllers.VocController.vocDcatSubthemesGetAll
+GET         /voc/dcatsubthemes/getbyid/:dcatapitThemeId                  controllers.VocController.vocDcatSubthemesGetById(dcatapitThemeId: String)
+GET         /voc/dcatthemes/daf2dcat/:themeId                            controllers.VocController.vocDaf2DcatTheme(themeId: String)
+GET         /voc/dcatsubthemes/daf2dcat/:themeId/:subthemeId             controllers.VocController.vocDaf2DcatSubtheme(themeId: String, subthemeId: String)
 
 POST        /catalog-manager/v1/kylo/feed/:fileType                      controllers.KyloController.createKyloFeed(fileType: String)
 
-GET         /catalog-manager/v1/nifi/start/:orgName/:datasetName         controllers.NifiControllers.startNifiProcessor(datasetName: String, orgName: String)
+GET         /catalog-manager/v1/nifi/start/:orgName/:datasetName         controllers.NifiController.startNifiProcessor(datasetName: String, orgName: String)
 
 POST        /catalog-manager/v1/ckan/add                                 controllers.CkanController.addCatalogCkanGeo
 #DELETE      /ckan/purgeDatasetCkanGeo/:datasetId                         controllers.CkanController.purgeDatasetCkanGeo(datasetId: String)

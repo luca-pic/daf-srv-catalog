@@ -8,7 +8,8 @@ name := "daf-srv-catalog"
 
 Seq(gitStampSettings: _*)
 
-scalaVersion in ThisBuild := "2.11.11"
+scalaVersion in ThisBuild := "2.11.12"
+//scalaVersion in ThisBuild := "2.12.8"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, DockerPlugin)
 
@@ -19,8 +20,11 @@ libraryDependencies ++= Seq(
   "org.mongodb" %% "casbah" % "3.1.1",
   //elastic
   "com.sksamuel.elastic4s" %% "elastic4s-http" % "5.6.4",
-  "org.elasticsearch.client" % "elasticsearch-rest-client" % "6.2.2"
-  //"io.swagger" %% "swagger-play2" % "1.5.1", already on common
+  "org.elasticsearch.client" % "elasticsearch-rest-client" % "5.6.2",
+  "org.scalactic" %% "scalactic" % "3.0.5",
+  "org.scalatest" %% "scalatest" % Versions.scalaTest % "test",
+  "org.mockito" % "mockito-scala_2.11" % "1.1.4"
+//"io.swagger" %% "swagger-play2" % "1.5.1", already on common
   //"org.apache.spark" %% "spark-core" % "2.2.0",
   //"org.apache.spark" %% "spark-sql" % "2.2.0"
 )
@@ -45,6 +49,7 @@ resolvers ++= Seq(
   //"lightshed-maven" at "http://dl.bintray.com/content/lightshed/maven",
   "daf repo" at s"$nexusUrl/maven-public/",
   "Bintary JCenter" at "http://jcenter.bintray.com"
+
 )
 
 

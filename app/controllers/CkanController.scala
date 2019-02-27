@@ -104,4 +104,23 @@ class CkanController @Inject()(secInvokManager: SecuredInvocationManager, playSe
       }
     }
   }
+
+
+  @ApiOperation(value = "add catalog to ckan-geo", response = classOf[String])
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(value = "Dataset to save", name = "dcatapit",
+      required = true, dataType = "it.gov.daf.model.Dataset", paramType = "body")
+  )
+  )
+  def test = Action.async(circe.json[Dataset]) { implicit request =>
+    RequestContext.execInContext[Future[Result]]("test") { () =>
+      handleException[String] {
+        val k = ckanGeoClient.createCkanGeoCatalog(request.body)
+
+        println(k)
+
+        Future.successful(Right("ok"))
+      }
+    }
+  }
 }

@@ -4,7 +4,7 @@ import javax.inject.Inject
 import play.api.{Configuration, Logger}
 import play.api.libs.circe.Circe
 import play.api.libs.ws.WSClient
-import play.api.mvc.{Action, Controller, Result}
+import play.api.mvc._
 import it.gov.daf.model._
 import io.circe.generic.auto._
 import io.swagger.annotations._
@@ -18,6 +18,7 @@ import it.gov.daf.common.authentication.Authentication
 import it.gov.daf.common.config.ConfigReadException
 import it.gov.daf.common.sso.common.CredentialManager
 import it.gov.daf.common.utils.RequestContext.execInContext
+import it.gov.daf.common.utils.UserInfo
 import it.gov.daf.config._
 import org.pac4j.play.store.PlaySessionStore
 
@@ -45,10 +46,14 @@ class CatalogController @Inject()(val playSessionStore: PlaySessionStore)
 
 
   private val logger = Logger(this.getClass.getName)
-  private val mongoClient = new MongoRepository
+  protected val mongoClient = new MongoRepository
   private val kafkaProxyClient = new KafkaProxyRepository
   private val kyloClient = new KyloRepository
   private val elasticsearchClient = new ElasticsearchRepository
+
+  protected def getUserInfo[A](request: Request[A]) = {
+    CredentialManager.readCredentialFromRequest(request)
+  }
 
   @ApiOperation(value = "get public metacatalog from db", response = classOf[MetaCatalog])
   def getPublicCatalog(name: String) = Action.async { implicit request =>
@@ -63,8 +68,8 @@ class CatalogController @Inject()(val playSessionStore: PlaySessionStore)
   def getCatalog(name: String) = Action.async { implicit request =>
     execInContext[Future[Result]]("getCatalog") { () =>
       handleException[MetaCatalog] {
-        val credentials = CredentialManager.readCredentialFromRequest(request)
-        mongoClient.getPrivateMetaCatalogByName(name, credentials.username, credentials.groups.toList)
+        val userInfo: UserInfo = getUserInfo[AnyContent](request)
+        mongoClient.getPrivateMetaCatalogByName(name, userInfo.username, userInfo.groups.toList)
       }
     }
   }
@@ -152,7 +157,7 @@ class CatalogController @Inject()(val playSessionStore: PlaySessionStore)
               }
             }
           }
-          else Logger.logger.debug(s"$datasetId is private");
+          else Logger.logger.debug(s"$datasetId is private")
           Future.successful(Right(DafResponseSuccess("", None)))
         }
 
@@ -265,6 +270,16 @@ class CatalogController @Inject()(val playSessionStore: PlaySessionStore)
           }
           case None => Future.successful(Left(Error(Some(401), "need Bearer token", None)))
         }
+      }
+    }
+  }
+
+
+  @ApiOperation(value = "list of fields name of vocabulary", response = classOf[Seq[DatasetNameFields]])
+  def getFieldsVoc() = Action.async { implicit request =>
+    execInContext[Future[Result]]("getFieldsVoc") { () =>
+      handleException[Seq[DatasetNameFields]] {
+        mongoClient.getFieldsVoc
       }
     }
   }

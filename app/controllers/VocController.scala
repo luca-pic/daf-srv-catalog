@@ -64,7 +64,7 @@ class VocController @Inject()  extends Controller with Circe {
   }
 
   @ApiOperation(value = "get a DAF Themes", response = classOf[Seq[KeyValue]])
-  def vocDcatThemeGetAll(themeId: String, subthemeId: String) = Action.async { implicit request =>
+  def vocDcatThemeGetAll = Action.async { implicit request =>
     execInContext[Future[Result]]("vocDcatThemeGetAll") { () =>
       handleException[Seq[KeyValue]] {
         vocRepository.listDcatThemeAll()

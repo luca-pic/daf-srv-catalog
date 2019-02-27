@@ -2,7 +2,7 @@ package it.gov.daf.catalogmanager.catalog
 
 import com.mongodb
 import com.mongodb.{DBObject, ServerAddress}
-import com.mongodb.casbah.{MongoClient, MongoCredential}
+import com.mongodb.casbah.{MongoClient, MongoCollection, MongoCredential}
 import it.gov.daf.config.{MongoConfig, ServicesConfig}
 import javax.inject.Inject
 import play.api.{Configuration, Logger}
@@ -37,13 +37,15 @@ class MongoRepository @Inject()(implicit configuration: Configuration) {
 
   private val mongoHost = mongoConfig.host
   private val mongoPort = mongoConfig.port
-  private val database = mongoConfig.database
-  private val collection = mongoConfig.collection
+  private val databaseName = mongoConfig.database
+  private val collectionName = mongoConfig.collection
   private val userName = mongoConfig.username
   private val password = mongoConfig.password
 
   private val server = new ServerAddress(mongoHost, 27017)
-  private val credentials = MongoCredential.createCredential(userName, database, password.toCharArray)
+  private val credentials = MongoCredential.createCredential(userName, databaseName, password.toCharArray)
+
+  protected val collection: MongoCollection = MongoClient(server, List(credentials))(databaseName)(collectionName)
 
   private val logger = Logger(this.getClass.getName)
 
@@ -70,8 +72,8 @@ class MongoRepository @Inject()(implicit configuration: Configuration) {
   def getPublicMetaCatalogByName(name :String): Future[Either[Error, MetaCatalog]] = {
     val query = createPublicQuery(name)
     val mongoClient = MongoClient(server, List(credentials))
-    val db = mongoClient(database)
-    val coll = db(collection)
+    val db = mongoClient(databaseName)
+    val coll = db(collectionName)
     val result = coll.findOne(query)
     mongoClient.close
     val response = result match {
@@ -88,14 +90,9 @@ class MongoRepository @Inject()(implicit configuration: Configuration) {
     Future.successful(response)
   }
 
-  def getPrivateMetaCatalogByName(name: String, user: String, groups: List[String]) = {
+  def getPrivateMetaCatalogByName(name: String, user: String, groups: List[String]): Future[Either[Error, MetaCatalog]] = {
     val query = createPrivateQuery(name, user, groups)
-    println(user)
-    val mongoClient = MongoClient(server, List(credentials))
-    val db = mongoClient(database)
-    val coll = db(collection)
-    val result = coll.findOne(query)
-    mongoClient.close
+    val result = collection.findOne(query)
     val response = result match {
       case Some(mongoResponse) => {
         val jsonString = com.mongodb.util.JSON.serialize(mongoResponse)
@@ -112,11 +109,7 @@ class MongoRepository @Inject()(implicit configuration: Configuration) {
 
   def isPresent(name: String): Boolean = {
     val query = MongoDBObject("dcatapit.name" -> name)
-    val mongoClient = MongoClient(server, List(credentials))
-    val db = mongoClient(database)
-    val coll = db(collection)
-    val result = coll.findOne(query)
-    mongoClient.close
+    val result = collection.findOne(query)
     result match {
       case Some(_) => true
       case _       => false
@@ -132,11 +125,8 @@ class MongoRepository @Inject()(implicit configuration: Configuration) {
             val res = CatalogManager.writeOrdinaryWithStandard(metaCatalog, stdCatalog)
             res match {
               case Some(meta) => {
-                val mongoClient = MongoClient(server, List(credentials))
-                val db = mongoClient(database)
-                val coll = db(collection)
                 val obj = com.mongodb.util.JSON.parse(meta.asJson.toString()).asInstanceOf[DBObject]
-                val responseInsert = coll.insert(obj)
+                val responseInsert = collection.insert(obj)
                 if(responseInsert.wasAcknowledged()) { logger.debug(s"${meta.dcatapit.name} inserted"); Right(DafResponseSuccess(s"${meta.dcatapit.name} inserted", None)) }
                 else { logger.debug(s"error in insert ${meta.dcatapit.name}"); Left(Error(Some(500), "Internal server error", None)) }
               }
@@ -149,11 +139,8 @@ class MongoRepository @Inject()(implicit configuration: Configuration) {
         CatalogManager.writeOrdAndStdOrDerived(metaCatalog) match {
           case None    => logger.debug(s"error in writeOrdAndStdOrDerived for metacatalog ${metaCatalog.dcatapit.name}"); Left(Error(Some(500), "Internal server error", None))
           case Some(meta) => {
-            val mongoClient = MongoClient(server, List(credentials))
-            val db = mongoClient(database)
-            val coll = db(collection)
             val obj = com.mongodb.util.JSON.parse(meta.asJson.toString()).asInstanceOf[DBObject]
-            val responseInsert = coll.insert(obj)
+            val responseInsert = collection.insert(obj)
             if(responseInsert.wasAcknowledged()) { logger.debug(s"${meta.dcatapit.name} inserted"); Right(DafResponseSuccess(s"${meta.dcatapit.name} inserted", None)) }
             else { logger.debug(s"error in insert ${meta.dcatapit.name}"); Left(Error(Some(500), "Internal server error", None)) }
           }
@@ -165,11 +152,7 @@ class MongoRepository @Inject()(implicit configuration: Configuration) {
 
   def getMetaCatalogByLogicalUri(logicalUri: String) = {
     val query = MongoDBObject("operational.logical_uri" -> logicalUri)
-    val mongoClient = MongoClient(server, List(credentials))
-    val db = mongoClient(database)
-    val coll = db(collection)
-    val result = coll.findOne(query)
-    mongoClient.close
+    val result = collection.findOne(query)
     result match {
       case Some(mongoResponse) => {
         val jsonString = com.mongodb.util.JSON.serialize(mongoResponse)
@@ -210,12 +193,7 @@ class MongoRepository @Inject()(implicit configuration: Configuration) {
     canDeleteCatalog(isSysAdmin, name, token, wsClient, user).map{ booleanResp =>
       if(booleanResp) {
         val query = createQueryToDeleteCatalog(isSysAdmin, name, user, org)
-
-        val mongoClient = MongoClient(server, List(credentials))
-        val db = mongoClient(database)
-        val coll = db("catalog_test")
-        val result = coll.findOne(query)
-        mongoClient.close()
+        val result = collection.findOne(query)
         result match {
           case Some(catalog) => {
             val jsonString = com.mongodb.util.JSON.serialize(catalog)
@@ -239,11 +217,7 @@ class MongoRepository @Inject()(implicit configuration: Configuration) {
     canDeleteCatalog(isSysAdmin, nameCatalog, token, wsClient, user).map{ booleanResp =>
       if(booleanResp){
         val query = createQueryToDeleteCatalog(isSysAdmin, nameCatalog, user, org)
-        val mongoClient = MongoClient(server, List(credentials))
-        val db = mongoClient(database)
-        val coll = db(collection)
-        val result = if(coll.remove(query).getN > 0) Right(DafResponseSuccess(s"catalog $nameCatalog deleted", None)) else Left(Error(Some(404), s"catalog $nameCatalog not found", None))
-        mongoClient.close()
+        val result = if(collection.remove(query).getN > 0) Right(DafResponseSuccess(s"catalog $nameCatalog deleted", None)) else Left(Error(Some(404), s"catalog $nameCatalog not found", None))
         Logger.logger.debug(s"$nameCatalog deleted from catalog_test result: ${result.isRight}")
         result
       } else { Logger.logger.debug("mongo: connection error");Left(Error(Some(500), s"connection error", None)) }
@@ -261,17 +235,26 @@ class MongoRepository @Inject()(implicit configuration: Configuration) {
       $or(MongoDBObject("dcatapit.author" -> user), "operational.acl.groupName" $in groups),
       MongoDBObject("operational.is_std" -> true)
     )
-    val mongoClient = MongoClient(server, List(credentials))
-    val db = mongoClient(database)
-    val coll = db(collection)
-    val results = coll.find(query).toList
-    mongoClient.close
+    val results = collection.find(query).toList
     val jsonString = com.mongodb.util.JSON.serialize(results)
     val decodeSeqMetacatalog = decode[Seq[MetaCatalog]](jsonString)
     decodeSeqMetacatalog match {
       case Left(error)                                     => logger.debug(s"error in get standard fields: $error"); Future.successful(Left(Error(Some(500), error.getMessage, None)))
       case Right(seqMetacatalog) if seqMetacatalog.isEmpty => logger.debug("standard fields not found"); Future.successful(Left(Error(Some(404), "not found", None)))
       case Right(seqMetacatalog)                           => logger.debug(s"found ${seqMetacatalog.size} standard catalog"); Future.successful(Right(parseResponse(seqMetacatalog)))
+    }
+  }
+
+  def getFieldsVoc: Future[Either[Error, Seq[DatasetNameFields]]] = {
+    def parseFieldsVoc(seqMetacatalog: Seq[MetaCatalog]) = seqMetacatalog.map{ catalog => DatasetNameFields(catalog.dcatapit.name, catalog.dataschema.avro.fields.get.map(f => f.name))}
+
+    val result = collection.find(MongoDBObject("operational.is_vocabulary" -> true)).toList
+    val jsonString = com.mongodb.util.JSON.serialize(result)
+    val decodeSeqMetacatalog = decode[Seq[MetaCatalog]](jsonString)
+    decodeSeqMetacatalog match {
+      case Left(error)                                     => logger.debug(s"error in get voc: $error"); Future.successful(Left(Error(Some(500), error.getMessage, None)))
+      case Right(seqMetacatalog) if seqMetacatalog.isEmpty => logger.debug("voc not found"); Future.successful(Left(Error(Some(404), "not found", None)))
+      case Right(seqMetacatalog)                           => logger.debug(s"found ${seqMetacatalog.size} voc"); Future.successful(Right(parseFieldsVoc(seqMetacatalog)))
     }
   }
 }

@@ -20,7 +20,7 @@ import scala.util.{Failure, Success}
 class ElasticsearchRepository @Inject()(implicit configuration: Configuration) {
 
   val elasticsearchConfigConfig: ElasticsearchConfig = ElasticsearchConfig.reader.read(configuration) match {
-    case Failure(error)  => throw ConfigReadException(s"Unable to read [kafka proxy config]", error)
+    case Failure(error)  => throw ConfigReadException(s"Unable to read [elasticsearch proxy config]", error)
     case Success(config) => config
   }
 
