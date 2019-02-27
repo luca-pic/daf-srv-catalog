@@ -71,11 +71,7 @@ class MongoRepository @Inject()(implicit configuration: Configuration) {
 
   def getPublicMetaCatalogByName(name :String): Future[Either[Error, MetaCatalog]] = {
     val query = createPublicQuery(name)
-    val mongoClient = MongoClient(server, List(credentials))
-    val db = mongoClient(databaseName)
-    val coll = db(collectionName)
-    val result = coll.findOne(query)
-    mongoClient.close
+    val result = collection.findOne(query)
     val response = result match {
       case Some(mongoResponse) => {
         val jsonString = com.mongodb.util.JSON.serialize(mongoResponse)

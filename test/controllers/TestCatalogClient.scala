@@ -1,6 +1,5 @@
 package controllers
 
-import com.mongodb.casbah.MongoConnection
 import instance.ConfigurationInstance
 import it.gov.daf.catalogmanager.catalog.MongoRepository
 import play.api.mvc.Request
@@ -22,6 +21,6 @@ trait TestCatalogClient extends ConfigurationInstance { this: CatalogController 
 sealed class TestMongoRepository @Inject()(implicit val configuration: Configuration) extends MongoRepository {
 
 
-  override val collection = MongoConnection()("ckan")("test-coll")
+  //override val collection =
 
 }

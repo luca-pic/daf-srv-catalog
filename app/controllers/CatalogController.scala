@@ -55,6 +55,18 @@ class CatalogController @Inject()(val playSessionStore: PlaySessionStore)
     CredentialManager.readCredentialFromRequest(request)
   }
 
+  protected def isDafSysAdmin[A](request: Request[A]) = {
+    CredentialManager.isDafSysAdmin(request)
+  }
+
+  protected def isOrgsEditor[A](request: Request[A], groups: Array[String]) = {
+    CredentialManager.isOrgsEditor(request, groups)
+  }
+
+  protected def isOrgsAdmin[A](request: Request[A], groups: Array[String]) = {
+    CredentialManager.isOrgsAdmin(request, groups)
+  }
+
   @ApiOperation(value = "get public metacatalog from db", response = classOf[MetaCatalog])
   def getPublicCatalog(name: String) = Action.async { implicit request =>
     execInContext[Future[Result]]("getPublicCatalog") { () =>
@@ -129,10 +141,10 @@ class CatalogController @Inject()(val playSessionStore: PlaySessionStore)
         OptionToken match {
           case None => logger.debug("Not token found"); Future.successful(Left(Error(Some(401), s"Not token found", None)))
           case Some(token) =>
-            val credentials = CredentialManager.readCredentialFromRequest(request)
+            val credentials = getUserInfo(request)
 
-            if (CredentialManager.isDafSysAdmin(request) || CredentialManager.isOrgsEditor(request, credentials.groups) ||
-              CredentialManager.isOrgsAdmin(request, credentials.groups)) {
+            if (isDafSysAdmin(request) || isOrgsEditor(request, credentials.groups) ||
+              isOrgsAdmin(request, credentials.groups)) {
               kafkaProxyClient.sendMessageKafkaProxy(credentials.username, request.body, token)
             }
             else logger.debug("Unauthorized to add metacatalog, admin or editor permissions required");
@@ -168,9 +180,9 @@ class CatalogController @Inject()(val playSessionStore: PlaySessionStore)
           kafkaProxyClient.sendGenericMessageToKafka(Some(kafkaProxyConfig.dafAdminGroup), None, "notification", "delete_error", s"Dataset $datasetName non cancellato", error, None, token)
         }
 
-        val credential = CredentialManager.readCredentialFromRequest(request)
+        val credential = getUserInfo(request)
 
-        val isSysAdmin = CredentialManager.isDafSysAdmin(request)
+        val isSysAdmin = isDafSysAdmin(request)
 
         val user = credential.username
 
@@ -215,7 +227,7 @@ class CatalogController @Inject()(val playSessionStore: PlaySessionStore)
   def getDatasetStandardFields = Action.async { implicit request =>
     execInContext[Future[Result]]("getDatasetStandardFields") { () =>
       handleException[Seq[DatasetNameFields]] {
-        val credentials = CredentialManager.readCredentialFromRequest(request)
+        val credentials = getUserInfo(request)
         mongoClient.getDatasetStandardFields(credentials.username, credentials.groups.toList)
       }
     }
@@ -239,7 +251,7 @@ class CatalogController @Inject()(val playSessionStore: PlaySessionStore)
   def getLinkedDataset(datasetName: String, limit: Option[Int]) = Action.async(circe.json[LinkedParams]) { implicit request =>
     execInContext[Future[Result]]("getLinkedDataset") { () =>
       handleException[Seq[LinkedDataset]] {
-        val credentials = CredentialManager.readCredentialFromRequest(request)
+        val credentials = getUserInfo(request)
         elasticsearchClient.getLinkedDatasets(datasetName, request.body, credentials.username, credentials.groups.toList, limit)
       }
     }

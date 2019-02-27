@@ -43,6 +43,7 @@ libraryDependencies += "play-circe" %% "play-circe" % "2.5-0.8.0"
 resolvers ++= Seq(
   Resolver.mavenLocal,
   "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
+//  Resolver.url("hmrc-sbt-plugin-releases", url("https://dl.bintray.com/hmrc/sbt-plugin-releases"))(Resolver.ivyStylePatterns),
   //  "jeffmay" at "https://dl.bintray.com/jeffmay/maven",
   //  Resolver.url("sbt-plugins", url("http://dl.bintray.com/gruggiero/sbt-plugins"))(Resolver.ivyStylePatterns),
   //"cloudera" at "https://repository.cloudera.com/artifactory/cloudera-repos/",
@@ -70,7 +71,7 @@ dockerCommands := dockerCommands.value.flatMap {
 
 dockerExposedPorts := Seq(9000)
 
-dockerEntrypoint := {Seq(s"bin/${name.value}", "-Dconfig.file=conf/production.conf")}
+dockerEntrypoint := {Seq(s"bin/${name.value}", "-Dconfig.file=conf/application.conf")}
 
 dockerRepository := Option(nexus)
 
