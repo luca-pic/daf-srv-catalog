@@ -1540,6 +1540,8 @@ definitions:
       - notificationType
       - title
     properties:
+      expirationDate:
+        type: string
       title:
         type: string
       topicName:
