@@ -1,6 +1,6 @@
 package it.gov.daf.catalogmanager.repository.catalog
 
-import catalog_manager.yaml.{Dataset, DatasetNameFields, Error, LinkedDataset, LinkedParams, MetaCatalog, MetadataCat, ResponseWrites, Success}
+import catalog_manager.yaml.{Dataset, DatasetNameFields, Error, LinkedDataset, LinkedParams, MetaCatalog, MetadataCat, ResponseWrites, Success, DataSetFields}
 import com.mongodb
 import com.mongodb.DBObject
 import com.mongodb.casbah.MongoClient
@@ -41,6 +41,52 @@ class CatalogRepositoryMongo extends  CatalogRepository{
   import scala.concurrent.ExecutionContext.Implicits.global
   import catalog_manager.yaml.BodyReads._
 
+  def isPresentOpenData(dataSetFields: DataSetFields): Future[Either[Error, Success]] ={
+    val mongoClient = MongoClient(server, List(credentials))
+    val db = mongoClient(source)
+    val coll = db("catalog_test")
+    val query = $and(
+      MongoDBObject("dcatapit.owner_org" -> dataSetFields.organization),
+      MongoDBObject("operational.ext_opendata.name" -> dataSetFields.dataSetName),
+      MongoDBObject("operational.ext_opendata.resourceName" -> dataSetFields.resourceName),
+      MongoDBObject("dcatapit.privatex" -> false)
+    )
+    val result = coll.findOne(query)
+    mongoClient.close()
+    val ispres = result match {
+      case Some(_) => Right(Success(s"dataset found -> (${dataSetFields.organization}, ${dataSetFields.dataSetName}, ${dataSetFields.resourceName})", None))
+      case _       => Left(Error(s"dataset not found -> (${dataSetFields.organization}, ${dataSetFields.dataSetName}, ${dataSetFields.resourceName})", None, None))
+    }
+    Future.successful(ispres)
+  }
+
+  def getByNameOpenData(dataSetFields: DataSetFields): Option[MetaCatalog] = {
+    val mongoClient = MongoClient(server, List(credentials))
+    val db = mongoClient(source)
+    val coll = db("catalog_test")
+    val query = $and(
+      MongoDBObject("dcatapit.owner_org" -> dataSetFields.organization),
+      MongoDBObject("operational.ext_opendata.name" -> dataSetFields.dataSetName),
+      MongoDBObject("operational.ext_opendata.resourceName" -> dataSetFields.resourceName),
+      MongoDBObject("dcatapit.privatex" -> false)
+    )
+    val result = coll.findOne(query)
+    mongoClient.close()
+    val metaCatalog = result match {
+      case Some(mongoResponse) => {
+        val jsonString = com.mongodb.util.JSON.serialize(mongoResponse)
+        val json = Json.parse(jsonString)
+        val metaCatalogJs = json.validate[MetaCatalog]
+        val metaCatalog = metaCatalogJs match {
+          case s: JsSuccess[MetaCatalog] => Some(s.get)
+          case _: JsError => None
+        }
+        metaCatalog
+      }
+      case _ => None
+    }
+    metaCatalog
+  }
   def listCatalogs(page :Option[Int], limit :Option[Int]) :Seq[MetaCatalog] = {
 
     val mongoClient = MongoClient(server, List(credentials))

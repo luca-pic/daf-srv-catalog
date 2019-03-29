@@ -1,7 +1,7 @@
 package it.gov.daf.catalogmanager.service
 
 
-import catalog_manager.yaml.{Dataset, DatasetNameFields, Error, LinkedDataset, LinkedParams, MetaCatalog, MetadataCat, Success}
+import catalog_manager.yaml.{Dataset, DatasetNameFields, Error, LinkedDataset, LinkedParams, MetaCatalog, MetadataCat, Success, DataSetFields}
 import it.gov.daf.catalogmanager.repository.catalog.CatalogRepositoryComponent
 import play.api.libs.json.JsValue
 
@@ -47,6 +47,14 @@ trait CatalogServiceComponent {
     def createCatalogExtOpenData(metaCatalog: MetaCatalog, callingUserid :MetadataCat, ws :WSClient) :Success = {
       println("Service : " +  callingUserid)
       catalogRepository.createCatalogExtOpenData(metaCatalog, callingUserid, ws)
+    }
+
+    def isPresentOpenData(dataSetFields: DataSetFields): Future[Either[Error, Success]] = {
+      catalogRepository.isPresentOpenData(dataSetFields)
+    }
+
+    def getByNameOpenData(dataSetFields: DataSetFields): Option[MetaCatalog] = {
+      catalogRepository.getByNameOpenData(dataSetFields)
     }
 
     def isPresentOnCatalog(name :String) :Option[Boolean] = {
