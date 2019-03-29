@@ -49,7 +49,7 @@ import it.gov.daf.catalogmanager.nifi.Nifi
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-                                                                                                                                                                                                                                                    
+    
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -341,6 +341,17 @@ package catalog_manager.yaml {
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.voc_dcat2dafsubtheme
         }
+        val getByNameOpenData = getByNameOpenDataAction { (dataSetFields: DataSetFields) =>  
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.getByNameOpenData
+            RequestContext.execInContext[Future[GetByNameOpenDataType[T] forSome { type T }]]("isPresentOnCatalog") { () =>
+                val result = ServiceRegistry.catalogRepository.getByNameOpenData(dataSetFields)
+                result match {
+                    case Some(metacatalog) => GetByNameOpenData200(metacatalog)
+                    case _ => GetByNameOpenData404(Error(s"dataset not found -> (${dataSetFields.organization}, ${dataSetFields.dataSetName}, ${dataSetFields.resourceName})",None,None))
+                }
+            }
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.getByNameOpenData
+        }
         val addQueueCatalog = addQueueCatalogAction { (catalog: StringToKafka) =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.addQueueCatalog
             RequestContext.execInContext[Future[AddQueueCatalogType[T] forSome { type T }]]("addQueueCatalog") { () =>
@@ -490,7 +501,6 @@ package catalog_manager.yaml {
                             kafkaMsgInfo.title,
                             kafkaMsgInfo.description,
                             kafkaMsgInfo.link,
-                            kafkaMsgInfo.expirationDate,
                             t) flatMap{
                             case Right(r) => SendToKafka200(r)
                             case Left(l) => SendToKafka500(l)
@@ -506,6 +516,11 @@ package catalog_manager.yaml {
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.test
             NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.test
+        }
+        val isPresentOpenData = isPresentOpenDataAction { (dataSetFields: DataSetFields) =>  
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.isPresentOpenData
+            NotImplementedYet
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.isPresentOpenData
         }
         val verifycredentials = verifycredentialsAction { (credentials: Credentials) =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.verifycredentials

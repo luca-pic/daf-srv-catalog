@@ -285,6 +285,9 @@
       else Right(Success(msg,Some(msg)))
     }
 
+    def getByNameOpenData(dataSetFields: DataSetFields): Option[MetaCatalog] = {
+      None
+    }
     // Not used
      def standardUris(): List[String] = List("ale", "raf")
 
@@ -308,4 +311,8 @@
 
     def getLinkedDatasets(datasetName: String, linkedParams: LinkedParams, user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]] =
       Future.successful(Seq[LinkedDataset]())
+
+    def isPresentOpenData(dataSetFields: DataSetFields) = {
+      Future.successful(Right(Success("is present", None)))
+    }
   }
