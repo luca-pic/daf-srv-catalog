@@ -49,7 +49,7 @@ import it.gov.daf.catalogmanager.nifi.Nifi
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-
+    
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -105,7 +105,7 @@ package catalog_manager.yaml {
             }
         }
 
-        private def sendGenericMessageToKafka(group: Option[String], userToSend: Option[String], topic: String, notificationType: String, title: String, description: String, link: Option[String], token: String) ={
+        private def sendGenericMessageToKafka(group: Option[String], userToSend: Option[String], topic: String, notificationType: String, title: String, description: String, link: Option[String], expirationDate: Option[String], token: String) ={
             Logger.logger.debug(s"kafka proxy $KAFKAPROXY, topic $topic")
 
             val receiver = userToSend match {
@@ -114,8 +114,10 @@ package catalog_manager.yaml {
             }
 
             val message = s"""{
-                             |"records":[{"value":{$receiver, "token":"$token","notificationtype": "$notificationType", "info":{
-                             |"title":"$title","description":"$description","link":"${link.getOrElse("")}"}}}]}""".stripMargin
+                             |"records":[{"value":{$receiver, "token":"$token","notificationtype": "$notificationType",
+                             |"endDate":"${expirationDate.orNull}",
+                             |"info":{"title":"$title","description":"$description","link":"${link.orNull}"}
+                             |}}]}""".stripMargin
 
             val jsonBody = Json.parse(message)
 
@@ -196,9 +198,9 @@ package catalog_manager.yaml {
 
                 def sendNotifications(user: String, datasetName: String, error: String, token: String) = {
                     //user notification
-                    sendGenericMessageToKafka(None, Some(user), "notification", "delete_error", s"Dataset $datasetName non cancellato", s"Non è stato possibile cancellare il dataset $datasetName, è stata contattata l'assistenza", None, token)
+                    sendGenericMessageToKafka(None, Some(user), "notification", "delete_error", s"Dataset $datasetName non cancellato", s"Non è stato possibile cancellare il dataset $datasetName, è stata contattata l'assistenza", None, None, token)
                     //admin notification
-                    sendGenericMessageToKafka(Some(DAF_ADMIN_GROUP), None, "notification", "delete_error", s"Dataset $datasetName non cancellato", error, None, token)
+                    sendGenericMessageToKafka(Some(DAF_ADMIN_GROUP), None, "notification", "delete_error", s"Dataset $datasetName non cancellato", error, None, None, token)
                 }
 
                 val credential = CredentialManager.readCredentialFromRequest(currentRequest)
@@ -446,6 +448,7 @@ package catalog_manager.yaml {
                 result match {
                     case Some(true) => IsPresentOnCatalog200(Success("is present", Some(name)))
                     case _ => IsPresentOnCatalog404(s"$name non presente")
+
                 }
             }
             //  NotImplementedYet
