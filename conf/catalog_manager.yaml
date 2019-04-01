@@ -442,6 +442,70 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
+  "/open-data/ispresent":
+    post:
+      tags:
+        Present
+      description: get if the dataset is present
+      operationId: isPresentOpenData
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: dataSetFields
+        in: body
+        description: parameters for to find a Dataset
+        required: true
+        schema:
+          $ref: '#/definitions/DataSetFields'
+      responses:
+        200:
+          description: dataset is presentOpenData
+          schema:
+            type: Success
+            $ref: '#/definitions/Success'
+        404:
+          description: dataset is not present
+          schema:
+            type: object
+            $ref: '#/definitions/Error'
+        500:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  "/open-data/getbyname":
+    post:
+      tags:
+      - GetDataset
+      description: get Dataset by name
+      operationId: getByNameOpenData
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+      - name: dataSetFields
+        in: body
+        description: parameters for to find a Dataset
+        required: true
+        schema:
+          $ref: '#/definitions/DataSetFields'
+      responses:
+        200:
+          description: get dataset
+          schema:
+            type:
+            $ref: '#/definitions/MetaCatalog'
+        404:
+          description: Dataset not found
+          schema:
+            type: object
+            $ref: '#/definitions/Error'
+        500:
+          description: Error
+          schema:
+            $ref: '#/definitions/Error'
   "/catalog-ds/linked/{name}":
     post:
       tags:
@@ -1868,6 +1932,9 @@ definitions:
       #id:
       #  type: integer
       #  format: int32
+      state:
+        type: string
+        description: Dataset is active or not
       theme:
         type: string
         description: DAF Theme for the dataset
@@ -2686,3 +2753,16 @@ definitions:
         type: string
       catalog:
         $ref: '#/definitions/MetaCatalog'
+  DataSetFields:
+    type: object
+    required:
+      - organization
+      - dataSetName
+      - resourceName
+    properties:
+      organization:
+        type: string
+      dataSetName:
+        type: string
+      resourceName:
+        type: string

@@ -140,4 +140,11 @@ class CatalogRepositoryDev extends CatalogRepository{
 
   def getLinkedDatasets(datasetName: String, linkedParams: LinkedParams, user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]] =
     Future.successful(Seq[LinkedDataset]())
+
+  def getByNameOpenData(dataSetFields: DataSetFields): Option[MetaCatalog] = {
+    None
+  }
+  def isPresentOpenData(dataSetFields: DataSetFields): Future[Either[Error, Success]] = {
+    Future.successful(Right(Success("Is present",None)))
+  }
 }
