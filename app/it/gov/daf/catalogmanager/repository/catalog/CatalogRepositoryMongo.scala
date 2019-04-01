@@ -49,7 +49,8 @@ class CatalogRepositoryMongo extends  CatalogRepository{
       MongoDBObject("dcatapit.owner_org" -> dataSetFields.organization),
       MongoDBObject("operational.ext_opendata.name" -> dataSetFields.dataSetName),
       MongoDBObject("operational.ext_opendata.resourceName" -> dataSetFields.resourceName),
-      MongoDBObject("dcatapit.privatex" -> false)
+      MongoDBObject("dcatapit.privatex" -> false),
+      MongoDBObject("operational.state" -> "active")
     )
     val result = coll.findOne(query)
     mongoClient.close()
@@ -68,7 +69,9 @@ class CatalogRepositoryMongo extends  CatalogRepository{
       MongoDBObject("dcatapit.owner_org" -> dataSetFields.organization),
       MongoDBObject("operational.ext_opendata.name" -> dataSetFields.dataSetName),
       MongoDBObject("operational.ext_opendata.resourceName" -> dataSetFields.resourceName),
-      MongoDBObject("dcatapit.privatex" -> false)
+      MongoDBObject("dcatapit.privatex" -> false),
+      MongoDBObject("operational.state" -> "active")
+
     )
     val result = coll.findOne(query)
     mongoClient.close()
