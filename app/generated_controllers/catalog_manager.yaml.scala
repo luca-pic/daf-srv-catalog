@@ -519,7 +519,14 @@ package catalog_manager.yaml {
         }
         val isPresentOpenData = isPresentOpenDataAction { (dataSetFields: DataSetFields) =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.isPresentOpenData
-            NotImplementedYet
+            RequestContext.execInContext[Future[IsPresentOpenDataType[T] forSome { type T }]]("isPresentOnCatalog") { () =>
+                                val result = ServiceRegistry.catalogRepository.isPresentOpenData(dataSetFields)
+                                result.flatMap {
+                                        case Right(dataset) => IsPresentOpenData200(dataset)
+                                        case Left(l) => IsPresentOpenData404(l)
+                                    }
+                            }
+
             // ----- End of unmanaged code area for action  Catalog_managerYaml.isPresentOpenData
         }
         val verifycredentials = verifycredentialsAction { (credentials: Credentials) =>  
