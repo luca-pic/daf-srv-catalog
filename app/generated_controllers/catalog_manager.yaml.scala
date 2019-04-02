@@ -501,6 +501,7 @@ package catalog_manager.yaml {
                             kafkaMsgInfo.title,
                             kafkaMsgInfo.description,
                             kafkaMsgInfo.link,
+                            kafkaMsgInfo.expirationDate,
                             t) flatMap{
                             case Right(r) => SendToKafka200(r)
                             case Left(l) => SendToKafka500(l)
@@ -520,12 +521,12 @@ package catalog_manager.yaml {
         val isPresentOpenData = isPresentOpenDataAction { (dataSetFields: DataSetFields) =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.isPresentOpenData
             RequestContext.execInContext[Future[IsPresentOpenDataType[T] forSome { type T }]]("isPresentOnCatalog") { () =>
-                val result = ServiceRegistry.catalogRepository.isPresentOpenData(dataSetFields)
-                result.flatMap {
-                    case Right(dataset) => IsPresentOpenData200(dataset)
-                    case Left(l) => IsPresentOpenData404(l)
-                }
-            }
+                                val result = ServiceRegistry.catalogRepository.isPresentOpenData(dataSetFields)
+                                result.flatMap {
+                                        case Right(dataset) => IsPresentOpenData200(dataset)
+                                        case Left(l) => IsPresentOpenData404(l)
+                                    }
+                            }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.isPresentOpenData
         }
         val verifycredentials = verifycredentialsAction { (credentials: Credentials) =>  

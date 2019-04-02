@@ -1932,6 +1932,9 @@ definitions:
       #id:
       #  type: integer
       #  format: int32
+      state:
+        type: string
+        description: Dataset is active or not
       theme:
         type: string
         description: DAF Theme for the dataset
