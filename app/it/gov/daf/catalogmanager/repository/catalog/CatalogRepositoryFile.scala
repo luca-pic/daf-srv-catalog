@@ -315,4 +315,10 @@
     def isPresentOpenData(dataSetFields: DataSetFields) = {
       Future.successful(Right(Success("is present", None)))
     }
+
+    def setOperationalStateInactive(datasetName: String, isDafSysAdmin: Boolean, credentialAuthor: String): Future[Either[Error, Success]] =
+      Future.successful(Right(Success("state = inactive", None)))
+
+    def updateDcatapit(catalog: Dataset, isDafSysAdmin: Boolean, credentialAuthor: String): Future[Either[Error, Success]] =
+      Future.successful(Right(Success("update Dcatapit", None)))
   }

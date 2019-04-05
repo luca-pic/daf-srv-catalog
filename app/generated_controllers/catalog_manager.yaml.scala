@@ -49,7 +49,7 @@ import it.gov.daf.catalogmanager.nifi.Nifi
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-    
+        
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -618,6 +618,19 @@ package catalog_manager.yaml {
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.getckanuserorganizationList
         }
+        val setOperationalStateInactive = setOperationalStateInactiveAction { (datasetName: String) =>  
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.setOperationalStateInactive
+            RequestContext.execInContext[Future[SetOperationalStateInactiveType[T] forSome { type T }]]("isPresentOnCatalog") { () =>
+                val credentialAuthor = CredentialManager.readCredentialFromRequest(currentRequest).username
+                val isDafSysAdmin = CredentialManager.isDafSysAdmin(currentRequest)
+                val result = ServiceRegistry.catalogRepository.setOperationalStateInactive(datasetName,isDafSysAdmin,credentialAuthor)
+                result.flatMap {
+                    case Right(r) => SetOperationalStateInactive200(r)
+                    case Left(l) => SetOperationalStateInactive404(l)
+                }
+            }
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.setOperationalStateInactive
+        }
         val voc_themesgetall = voc_themesgetallAction {  _ =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.voc_themesgetall
             RequestContext.execInContext[Future[Voc_themesgetallType[T] forSome { type T }]]("voc_themesgetall") { () =>
@@ -756,6 +769,19 @@ package catalog_manager.yaml {
                 }
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.patchckanorganization
+        }
+        val updateDcatapit = updateDcatapitAction { (catalog: Dataset) =>  
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.updateDcatapit
+            RequestContext.execInContext[Future[UpdateDcatapitType[T] forSome { type T }]]("isPresentOnCatalog") { () =>
+                val credentialAuthor = CredentialManager.readCredentialFromRequest(currentRequest).username
+                val isDafSysAdmin = CredentialManager.isDafSysAdmin(currentRequest)
+                val result = ServiceRegistry.catalogRepository.updateDcatapit(catalog,isDafSysAdmin,credentialAuthor)
+                result.flatMap {
+                    case Right(r) => UpdateDcatapit200(r)
+                    case Left(l) => UpdateDcatapit401(l)
+                }
+            }
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.updateDcatapit
         }
         val datasetcatalogbyid = datasetcatalogbyidAction { (catalog_id: String) =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.datasetcatalogbyid
