@@ -30,7 +30,7 @@
 
   <root level="WARN">
     <appender-ref ref="STDOUT" />
-    <!--<appender-ref ref="TIME_BASED_FILE" />-->
+    <appender-ref ref="TIME_BASED_FILE" />
   </root>
 
 </configuration>

@@ -446,9 +446,10 @@ class CatalogRepositoryMongo extends  CatalogRepository{
       client.execute(queryElastic(searchType, queryDerivedFieldName, datasetName, limit)).map { res =>
         res.hits.hits.map { source =>
           MetaCatalogReads.reads(Json.parse(source.sourceAsString)) match {
-            case JsSuccess(value, _) => LinkedDataset("derived", value)
+            case JsSuccess(value, _) => Right(LinkedDataset("derived", value))
+            case JsError(errors)     => Left(Logger.logger.debug(s"[getDerivedDataset]: $errors"))
           }
-        }.toList
+        }.collect{ case Right(r) => r}.toList
       }
     }
 
@@ -456,9 +457,10 @@ class CatalogRepositoryMongo extends  CatalogRepository{
       client.execute(queryElastic(searchType, querySourcesFieldName, linkedParams.sourcesName.mkString(" "), limit)).map { res =>
         res.hits.hits.map { source =>
           MetaCatalogReads.reads(Json.parse(source.sourceAsString)) match {
-            case JsSuccess(value, _) => LinkedDataset("source", value)
+            case JsSuccess(value, _) => Right(LinkedDataset("source", value))
+            case JsError(errors)     => Left(Logger.logger.debug(s"[getSourcesDataset]: $errors"))
           }
-        }.toList
+        }.collect{ case Right(r) => r}.toList
       }
     }
 
@@ -467,6 +469,4 @@ class CatalogRepositoryMongo extends  CatalogRepository{
       derivedDataset <- getDerivedDataset
     } yield sourcesDataset ::: derivedDataset
   }
-
-
 }

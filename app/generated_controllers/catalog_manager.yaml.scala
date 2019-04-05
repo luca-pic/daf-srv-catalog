@@ -41,6 +41,7 @@ import play.api.Logger
 import play.api.mvc.Headers
 import it.gov.daf.common.utils.RequestContext
 import it.gov.daf.catalogmanager.nifi.Nifi
+import scala.util
 
 /**
  * This controller is re-generated after each change in the specification.
@@ -49,7 +50,7 @@ import it.gov.daf.catalogmanager.nifi.Nifi
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-                                                                                                                                                    
+                                                                                                                                                                    
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -852,8 +853,8 @@ package catalog_manager.yaml {
                     } yield trasformed
 
                     val createFeed: Future[WSResponse] = feedData.flatMap {
-                        case s: JsSuccess[JsValue] => logger.debug(Json.stringify(s.get)); feedCreation.post(s.get)
-                        case e: JsError => throw new Exception(JsError.toJson(e).toString())
+                        case JsSuccess(s, _) => logger.debug(Json.stringify(s)); feedCreation.post(s)
+                        case JsError(e) => throw new Exception(JsError.toJson(e).toString())
                     }
 
                     createFeed onComplete (r => Logger.logger.debug(s"kyloResp: ${r.get.status}"))
@@ -902,6 +903,8 @@ package catalog_manager.yaml {
                         case "srv_push" => kylo.hdfsIngest(file_type, path)
                     }
 
+                    templateProperties onComplete{ x => println(s"[kylo-template-properties]: $x")}
+
                     val categoryFuture = kylo.categoryFuture(feed)
 
                     val streamKyloTemplate = new FileInputStream(Environment.simple().getFile("/data/kylo/template_test.json"))
@@ -911,6 +914,8 @@ package catalog_manager.yaml {
                     } finally {
                         streamKyloTemplate.close()
                     }
+
+                    println(s"[kylo-template-static] $kyloTemplate")
 
                     val sftpPath = URLEncoder.encode(s"$domain/$subDomain/$dsName", "UTF-8")
 
@@ -928,7 +933,7 @@ package catalog_manager.yaml {
 
                     val feedData = for {
                         (template, templates) <- templateProperties
-                        created <- createDir.get()
+//                        created <- createDir.get()
                         category <- categoryFuture
                         trasformed <- Future(kyloTemplate.transform(
                             KyloTrasformers.feedTrasform(feed,
@@ -942,20 +947,26 @@ package catalog_manager.yaml {
                         )
                     } yield trasformed
 
-                    val createFeed: Future[WSResponse] = feedData.flatMap {
-                        case s: JsSuccess[JsValue] => logger.debug(Json.stringify(s.get)); feedCreation.post(s.get)
-                        case e: JsError => throw new Exception(JsError.toJson(e).toString())
+                    feedData onComplete {
+                        case Failure(exception) => println(s"[errore]: $exception")
+                        case util.Success(value) => println(s"[success]: $value")
                     }
 
-                    createFeed onComplete (r => Logger.logger.debug(s"kyloResp ${r.get.status}: ${r.get.body}"))
+//                    val createFeed: Future[WSResponse] = feedData.flatMap {
+//                        case JsSuccess(s, _) => logger.debug(Json.stringify(s)); feedCreation.post(s)
+//                        case JsError(e) => throw new Exception(JsError.toJson(e).toString())
+//                    }
 
-                    val result = createFeed.flatMap {
-                        // Assuming status 200 (OK) is a valid result for you.
-                        case resp: WSResponse if resp.status == 200 => logger.debug(Json.stringify(resp.json)); StartKyloFedd200(yaml.Success("Feed started", Option(resp.body)))
-                        case _ => StartKyloFedd401(Error("Feed not created", Option(401), None))
-                    }
+//                    createFeed onComplete (r => Logger.logger.debug(s"kyloResp ${r.get.status}: ${r.get.body}"))
 
-                    result
+//                    val result = createFeed.flatMap {
+//                         Assuming status 200 (OK) is a valid result for you.
+//                        case resp: WSResponse if resp.status == 200 => logger.debug(Json.stringify(resp.json)); StartKyloFedd200(yaml.Success("Feed started", Option(resp.body)))
+//                        case _ => StartKyloFedd401(Error("Feed not created", Option(401), None))
+//                    }
+
+//                    result
+                    StartKyloFedd200(yaml.Success("Ok!", None))
                 }
             }
            // NotImplementedYet
