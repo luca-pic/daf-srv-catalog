@@ -57,6 +57,12 @@ trait CatalogServiceComponent {
       catalogRepository.getByNameOpenData(dataSetFields)
     }
 
+    def setOperationalStateInactive(datasetName: String, isDafSysAdmin: Boolean, credentialAuthor: String): Future[Either[Error, Success]] =
+      catalogRepository.setOperationalStateInactive(datasetName, isDafSysAdmin, credentialAuthor)
+
+    def updateDcatapit(catalog: Dataset, isDafSysAdmin: Boolean, credentialAuthor: String): Future[Either[Error, Success]] =
+      catalogRepository.updateDcatapit(catalog, isDafSysAdmin, credentialAuthor)
+
     def isPresentOnCatalog(name :String) :Option[Boolean] = {
       catalogRepository.isDatasetOnCatalog(name)
     }

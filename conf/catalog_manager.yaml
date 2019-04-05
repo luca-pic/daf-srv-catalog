@@ -445,7 +445,7 @@ paths:
   "/open-data/ispresent":
     post:
       tags:
-        Present
+        - isPresent
       description: get if the dataset is present
       operationId: isPresentOpenData
       consumes:
@@ -477,7 +477,7 @@ paths:
   "/open-data/getbyname":
     post:
       tags:
-      - GetDataset
+        - GetDataset
       description: get Dataset by name
       operationId: getByNameOpenData
       consumes:
@@ -495,10 +495,78 @@ paths:
         200:
           description: get dataset
           schema:
-            type:
+            type: object
             $ref: '#/definitions/MetaCatalog'
         404:
           description: Dataset not found
+          schema:
+            type: object
+            $ref: '#/definitions/Error'
+        500:
+          description: Error
+          schema:
+            $ref: '#/definitions/Error'
+  "/catalog-ds/updatedcatapit":
+    put:
+      tags:
+        - UpdateDcatapit
+      description: update all dcatapit
+      operationId: updateDcatapit
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+      - name: catalog
+        in: body
+        description: new dcatapit for the update
+        required: true
+        schema:
+          type: object
+          $ref: '#/definitions/Dataset'
+      responses:
+        200:
+          description: Success
+          schema:
+            type: object
+            $ref: '#/definitions/Success'
+        401:
+          description: Error
+          schema:
+            type: object
+            $ref: '#/definitions/Error'
+        404:
+          description: Error
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: Error
+          schema:
+            $ref: '#/definitions/Error'
+  "/catalog-ds/setinactive/{datasetName}":
+    get:
+      tags:
+        - UpdateOperationalState
+      description: Set Operational.state to inactive
+      operationId: setOperationalStateInactive
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+      - name: datasetName
+        in: path
+        description: name of the dataset
+        required: true
+        type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            type: object
+            $ref: '#/definitions/Success'
+        404:
+          description: Error
           schema:
             type: object
             $ref: '#/definitions/Error'

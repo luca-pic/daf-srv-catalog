@@ -29,6 +29,8 @@ trait CatalogRepository {
     def getLinkedDatasets(datasetName: String, linkedParams: LinkedParams, user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]]
     def isPresentOpenData(dataSetFields: DataSetFields): Future[Either[Error, Success]]
     def getByNameOpenData(dataSetFields: DataSetFields): Option[MetaCatalog]
+    def setOperationalStateInactive(datasetName: String, isDafSysAdmin: Boolean, credentialAuthor: String): Future[Either[Error, Success]]
+    def updateDcatapit(catalog: Dataset, isDafSysAdmin: Boolean, credentialAuthor: String): Future[Either[Error, Success]]
 
 
     // DO NOT DELETE
