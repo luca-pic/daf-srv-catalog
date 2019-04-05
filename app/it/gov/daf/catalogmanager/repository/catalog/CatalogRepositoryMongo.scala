@@ -1,26 +1,28 @@
 package it.gov.daf.catalogmanager.repository.catalog
 
-import catalog_manager.yaml.{Dataset, DatasetNameFields, Error, LinkedDataset, LinkedParams, MetaCatalog, MetadataCat, ResponseWrites, Success, DataSetFields}
+import catalog_manager.yaml.ResponseWrites.MetaCatalogWrites
+import catalog_manager.yaml.{DataSetFields, Dataset, DatasetNameFields, Error, LinkedDataset, LinkedParams, MetaCatalog, MetadataCat, ResponseWrites, Success}
 import com.mongodb
-import com.mongodb.DBObject
-import com.mongodb.casbah.MongoClient
+import com.mongodb.{BasicDBObject, DBObject}
+import com.mongodb.casbah.{MongoClient, query}
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import com.mongodb.casbah.Imports._
-import com.sksamuel.elastic4s.http.ElasticDsl.{search, termsAgg}
+import com.mongodb.casbah.query.Imports
+import com.sksamuel.elastic4s.http.ElasticDsl.{query, search, termsAgg, _}
 import it.gov.daf.catalogmanager.utilities.{CatalogManager, ConfigReader}
 import play.api.libs.ws.WSClient
 import play.api.Logger
 import com.sksamuel.elastic4s.http.search.SearchResponse
 import com.sksamuel.elastic4s.ElasticsearchClientUri
-import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.http.HttpClient
+import it.gov.daf.common.sso.common.CredentialManager
 
 import scala.concurrent.Future
 
 /**
   * Created by ale on 18/05/17.
   */
-class CatalogRepositoryMongo extends  CatalogRepository{
+class CatalogRepositoryMongo extends CatalogRepository{
 
   private val mongoHost: String = ConfigReader.getDbHost
   private val mongoPort = ConfigReader.getDbPort
@@ -41,7 +43,108 @@ class CatalogRepositoryMongo extends  CatalogRepository{
   import scala.concurrent.ExecutionContext.Implicits.global
   import catalog_manager.yaml.BodyReads._
 
-  def isPresentOpenData(dataSetFields: DataSetFields): Future[Either[Error, Success]] ={
+  def updateDcatapit(catalog: Dataset, isDafSysAdmin: Boolean, credentialAuthor: String): Future[Either[Error, Success]] = {
+    val mongoClient = MongoClient(server, List(credentials))
+    val db = mongoClient(source)
+    val coll = db("catalog_test")
+    if(isDafSysAdmin){
+      val query = MongoDBObject("dcatapit.name" -> catalog.name)
+      val result = coll.findOne(query)
+      result match {
+        case Some(mongoResponse) => {
+          val jsonString = com.mongodb.util.JSON.serialize(mongoResponse)
+          val json = Json.parse(jsonString)
+          val metaCatalogJs = json.validate[MetaCatalog]
+          metaCatalogJs match {
+            case s: JsSuccess[MetaCatalog] => {
+              if(s.get.dcatapit.owner_org == catalog.owner_org && s.get.dcatapit.theme == catalog.theme && s.get.dcatapit.title == catalog.title){
+                val newMeta = s.get.copy(dcatapit = catalog)
+                val json: JsValue = MetaCatalogWrites.writes(newMeta)
+                val obj = com.mongodb.util.JSON.parse(json.toString()).asInstanceOf[DBObject]
+                val responseUpdates = coll.update(query, obj)
+                mongoClient.close()
+                if(responseUpdates.isUpdateOfExisting)
+                  Future.successful(Right(Success("Mongo update: success", None)))
+                else
+                  Future.successful(Left(Error("Error update", Some(500), None)))
+              }
+              else
+                Future.successful(Left(Error("Error update: fields not equal", Some(401), None)))
+            }
+            case _ => Future.successful(Left(Error("Error update", Some(401), None)))
+          }
+        }
+        case _ => Future.successful(Left(Error("Error update: name of dataset not found", Some(404), None)))
+      }
+    }
+    else {
+      val query = MongoDBObject("dcatapit.name" -> catalog.name)
+      val result = coll.findOne(query)
+      result match {
+        case Some(mongoResponse) => {
+          val jsonString = com.mongodb.util.JSON.serialize(mongoResponse)
+          val json = Json.parse(jsonString)
+          val metaCatalogJs = json.validate[MetaCatalog]
+          metaCatalogJs match {
+            case s: JsSuccess[MetaCatalog] => {
+              if(s.get.dcatapit.author == catalog.author){
+                if(s.get.dcatapit.owner_org == catalog.owner_org && s.get.dcatapit.theme == catalog.theme && s.get.dcatapit.title == catalog.title) {
+                  val newMeta = s.get.copy(dcatapit = catalog)
+                  val json: JsValue = MetaCatalogWrites.writes(newMeta)
+                  val obj = com.mongodb.util.JSON.parse(json.toString()).asInstanceOf[DBObject]
+                  val responseUpdates = coll.update(query, obj)
+                  mongoClient.close()
+                  if (responseUpdates.isUpdateOfExisting)
+                    Future.successful(Right(Success("Mongo update: success", None)))
+                  else
+                    Future.successful(Left(Error("Error update", Some(500), None)))
+                }
+                else
+                  Future.successful(Left(Error("Error update: fields not equal", Some(401), None)))
+              }
+              else
+                Future.successful(Left(Error("Error update: Author not equal", Some(401), None)))
+            }
+            case _ => Future.successful(Left(Error("Error update", Some(500), None)))
+          }
+        }
+        case _ => Future.successful(Left(Error("Error update: name of dataset not found", Some(404), None)))
+      }
+    }
+  }
+
+  def setOperationalStateInactive(datasetName: String, isDafSysAdmin: Boolean, credentialAuthor: String): Future[Either[Error, Success]] = {
+    val mongoClient = MongoClient(server, List(credentials))
+    val db = mongoClient(source)
+    val coll = db("catalog_test")
+    if(isDafSysAdmin){
+      val query = MongoDBObject("dcatapit.name" -> datasetName)
+      val createQueryUpdateState: DBObject = new BasicDBObject("$set", new BasicDBObject("operational.state", "inactive"))
+      val responseUpdates = coll.update(query, createQueryUpdateState)
+      mongoClient.close()
+      if (responseUpdates.isUpdateOfExisting){
+        Future.successful(Right(Success("Mongo update: success", None)))
+      }
+      else {
+        Future.successful(Left(Error("Error update (is admin)", Some(404), None)))
+      }
+    }
+      else {
+        val query = $and(
+          MongoDBObject("dcatapit.name" -> datasetName),
+          MongoDBObject("dcatapit.author" -> credentialAuthor)
+        )
+        val createQueryUpdateState: DBObject = new BasicDBObject("$set", new BasicDBObject("operational.state", "inactive"))
+        val responseUpdates = coll.update(query, createQueryUpdateState)
+        mongoClient.close()
+        if (responseUpdates.isUpdateOfExisting)
+          Future.successful(Right(Success("Mongo update: success", None)))
+        else
+          Future.successful(Left(Error(s"$credentialAuthor Error update (and not is admin)", Some(404), None)))
+    }
+  }
+
+  def isPresentOpenData(dataSetFields: DataSetFields): Future[Either[Error, Success]] = {
     val mongoClient = MongoClient(server, List(credentials))
     val db = mongoClient(source)
     val coll = db("catalog_test")
