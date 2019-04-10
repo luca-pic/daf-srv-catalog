@@ -319,6 +319,6 @@
     def setOperationalStateInactive(datasetName: String, isDafSysAdmin: Boolean, credentialAuthor: String): Future[Either[Error, Success]] =
       Future.successful(Right(Success("state = inactive", None)))
 
-    def updateDcatapit(catalogSync: Dataset, isDafSysAdmin: Boolean, credentialAuthor: String, lastSyncronized: Option[String]): Future[Either[Error, Success]] =
+    def updateDcatapit(catalog: Dataset, isDafSysAdmin: Boolean, credentialAuthor: String, lastSyncronized: Option[String]): Future[Either[Error, Success]] =
       Future.successful(Right(Success("update Dcatapit", None)))
   }

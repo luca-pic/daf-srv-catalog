@@ -103,7 +103,6 @@ class CatalogRepositoryMongo extends CatalogRepository{
           val metaCatalogJs = json.validate[MetaCatalog]
           metaCatalogJs match {
             case s: JsSuccess[MetaCatalog] => {
-              Logger.debug(s"${credentialAuthor},  ${s.get.dcatapit.author}")
               if(s.get.dcatapit.author == Some(credentialAuthor)){
                 if(s.get.dcatapit.owner_org == catalog.owner_org && s.get.dcatapit.theme == catalog.theme && s.get.dcatapit.title == catalog.title) {
                   val newMeta = lastSyncronized.isEmpty match {
