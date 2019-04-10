@@ -445,7 +445,7 @@ paths:
   "/open-data/ispresent":
     post:
       tags:
-        - isPresent
+        - DatasetCatalog
       description: get if the dataset is present
       operationId: isPresentOpenData
       consumes:
@@ -477,7 +477,7 @@ paths:
   "/open-data/getbyname":
     post:
       tags:
-        - GetDataset
+        - DatasetCatalog
       description: get Dataset by name
       operationId: getByNameOpenData
       consumes:
@@ -509,7 +509,7 @@ paths:
   "/catalog-ds/updatedcatapit":
     put:
       tags:
-        - UpdateDcatapit
+        - DatasetCatalog
       description: update all dcatapit
       operationId: updateDcatapit
       consumes:
@@ -522,18 +522,23 @@ paths:
         description: new dcatapit for the update
         required: true
         schema:
-          type: object
           $ref: '#/definitions/Dataset'
+      - name: lastSyncronized
+        in: query
+        description: date of last syncronized
+        type: string
       responses:
         200:
           description: Success
           schema:
-            type: object
             $ref: '#/definitions/Success'
+        400:
+          description: Error
+          schema:
+            $ref: '#/definitions/Error'
         401:
           description: Error
           schema:
-            type: object
             $ref: '#/definitions/Error'
         404:
           description: Error
@@ -546,7 +551,7 @@ paths:
   "/catalog-ds/setinactive/{datasetName}":
     get:
       tags:
-        - UpdateOperationalState
+        - DatasetCatalog
       description: Set Operational.state to inactive
       operationId: setOperationalStateInactive
       consumes:
@@ -2128,6 +2133,8 @@ definitions:
       resourceName:
         type: string
       resourceUrl:
+        type: string
+      lastSyncronized:
         type: string
   Acl:
     type: object

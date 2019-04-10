@@ -1,23 +1,22 @@
 package it.gov.daf.catalogmanager.repository.catalog
-
 import catalog_manager.yaml.ResponseWrites.MetaCatalogWrites
-import catalog_manager.yaml.{DataSetFields, Dataset, DatasetNameFields, Error, LinkedDataset, LinkedParams, MetaCatalog, MetadataCat, ResponseWrites, Success}
+import catalog_manager.yaml.{DataSetFields, Dataset, DatasetNameFields, Error, ExtOpenData, LinkedDataset, LinkedParams, MetaCatalog, MetadataCat, Operational, OperationalExt_opendata, ResponseWrites, Success}
 import com.mongodb
 import com.mongodb.{BasicDBObject, DBObject}
-import com.mongodb.casbah.{MongoClient, query}
+import com.mongodb.casbah.MongoClient
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import com.mongodb.casbah.Imports._
-import com.mongodb.casbah.query.Imports
-import com.sksamuel.elastic4s.http.ElasticDsl.{query, search, termsAgg, _}
+import com.sksamuel.elastic4s.http.ElasticDsl._
 import it.gov.daf.catalogmanager.utilities.{CatalogManager, ConfigReader}
 import play.api.libs.ws.WSClient
 import play.api.Logger
 import com.sksamuel.elastic4s.http.search.SearchResponse
 import com.sksamuel.elastic4s.ElasticsearchClientUri
 import com.sksamuel.elastic4s.http.HttpClient
-import it.gov.daf.common.sso.common.CredentialManager
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+
 
 /**
   * Created by ale on 18/05/17.
@@ -40,10 +39,8 @@ class CatalogRepositoryMongo extends CatalogRepository{
   val server = new ServerAddress(mongoHost, 27017)
   val credentials = MongoCredential.createCredential(userName, source, password.toCharArray)
 
-  import scala.concurrent.ExecutionContext.Implicits.global
   import catalog_manager.yaml.BodyReads._
-
-  def updateDcatapit(catalog: Dataset, isDafSysAdmin: Boolean, credentialAuthor: String): Future[Either[Error, Success]] = {
+  def updateDcatapit(catalog: Dataset, isDafSysAdmin: Boolean, credentialAuthor: String, lastSyncronized: Option[String]): Future[Either[Error, Success]] = {
     val mongoClient = MongoClient(server, List(credentials))
     val db = mongoClient(source)
     val coll = db("catalog_test")
@@ -58,15 +55,34 @@ class CatalogRepositoryMongo extends CatalogRepository{
           metaCatalogJs match {
             case s: JsSuccess[MetaCatalog] => {
               if(s.get.dcatapit.owner_org == catalog.owner_org && s.get.dcatapit.theme == catalog.theme && s.get.dcatapit.title == catalog.title){
-                val newMeta = s.get.copy(dcatapit = catalog)
-                val json: JsValue = MetaCatalogWrites.writes(newMeta)
-                val obj = com.mongodb.util.JSON.parse(json.toString()).asInstanceOf[DBObject]
-                val responseUpdates = coll.update(query, obj)
-                mongoClient.close()
-                if(responseUpdates.isUpdateOfExisting)
-                  Future.successful(Right(Success("Mongo update: success", None)))
-                else
-                  Future.successful(Left(Error("Error update", Some(500), None)))
+                val newMeta = lastSyncronized.isEmpty match {
+                  case true => s.get.copy (dcatapit = catalog)
+                  case false => {
+                    s.get.operational.ext_opendata match {
+                      case Some(e) => {
+                        val exod: ExtOpenData = e.copy(lastSyncronized = lastSyncronized)
+                        val op: Operational = s.get.operational.copy(ext_opendata = Some(exod))
+                        val meta: MetaCatalog = s.get.copy(dcatapit = catalog)
+                        val meta2: MetaCatalog = meta.copy(operational = op)
+                        meta2
+                      }
+                      case _ => None
+                    }
+                  }
+                }
+                newMeta match {
+                  case m: MetaCatalog =>{
+                    val json: JsValue = MetaCatalogWrites.writes (m)
+                    val obj = com.mongodb.util.JSON.parse (json.toString () ).asInstanceOf[DBObject]
+                    val responseUpdates = coll.update (query, obj)
+                    mongoClient.close ()
+                    if (responseUpdates.isUpdateOfExisting)
+                      Future.successful(Right(Success ("Mongo update: success", None)))
+                    else
+                      Future.successful(Left(Error ("Error update", Some (500), None)))
+                  }
+                  case _ => Future.successful(Left(Error ("Error update: ext_opendata is null", Some (400), None)))
+                }
               }
               else
                 Future.successful(Left(Error("Error update: fields not equal", Some(401), None)))
@@ -87,17 +103,36 @@ class CatalogRepositoryMongo extends CatalogRepository{
           val metaCatalogJs = json.validate[MetaCatalog]
           metaCatalogJs match {
             case s: JsSuccess[MetaCatalog] => {
-              if(s.get.dcatapit.author == catalog.author){
+              if(s.get.dcatapit.author == Some(credentialAuthor)){
                 if(s.get.dcatapit.owner_org == catalog.owner_org && s.get.dcatapit.theme == catalog.theme && s.get.dcatapit.title == catalog.title) {
-                  val newMeta = s.get.copy(dcatapit = catalog)
-                  val json: JsValue = MetaCatalogWrites.writes(newMeta)
-                  val obj = com.mongodb.util.JSON.parse(json.toString()).asInstanceOf[DBObject]
-                  val responseUpdates = coll.update(query, obj)
-                  mongoClient.close()
-                  if (responseUpdates.isUpdateOfExisting)
-                    Future.successful(Right(Success("Mongo update: success", None)))
-                  else
-                    Future.successful(Left(Error("Error update", Some(500), None)))
+                  val newMeta = lastSyncronized.isEmpty match {
+                    case true => s.get.copy (dcatapit = catalog)
+                    case false => {
+                      s.get.operational.ext_opendata match {
+                        case e: ExtOpenData => {
+                          val exod: ExtOpenData = e.copy(lastSyncronized = lastSyncronized)
+                          val op: Operational = s.get.operational.copy(ext_opendata = Some(exod))
+                          val meta: MetaCatalog = s.get.copy(dcatapit = catalog)
+                          val meta2: MetaCatalog = meta.copy(operational = op)
+                          meta2
+                        }
+                        case _ => None
+                      }
+                    }
+                  }
+                  newMeta match{
+                    case m: MetaCatalog =>{
+                      val json: JsValue = MetaCatalogWrites.writes (m)
+                      val obj = com.mongodb.util.JSON.parse (json.toString () ).asInstanceOf[DBObject]
+                      val responseUpdates = coll.update (query, obj)
+                      mongoClient.close ()
+                      if (responseUpdates.isUpdateOfExisting)
+                        Future.successful(Right(Success ("Mongo update: success", None)))
+                      else
+                        Future.successful(Left(Error ("Error update", Some (500), None)))
+                    }
+                    case _ => Future.successful(Left(Error ("Error update: ext_opendata is null", Some (400), None)))
+                  }
                 }
                 else
                   Future.successful(Left(Error("Error update: fields not equal", Some(401), None)))
