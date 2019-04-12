@@ -45,28 +45,38 @@ class CatalogRepositoryMongo extends CatalogRepository{
     val db = mongoClient(source)
     val coll = db("catalog_test")
     if(isDafSysAdmin){
+      Logger.debug("User is SysAdmin")
       val query = MongoDBObject("dcatapit.name" -> catalog.name)
       val result = coll.findOne(query)
       result match {
         case Some(mongoResponse) => {
+          Logger.debug("Dataset found with query")
           val jsonString = com.mongodb.util.JSON.serialize(mongoResponse)
           val json = Json.parse(jsonString)
           val metaCatalogJs = json.validate[MetaCatalog]
           metaCatalogJs match {
             case s: JsSuccess[MetaCatalog] => {
               if(s.get.dcatapit.owner_org == catalog.owner_org && s.get.dcatapit.theme == catalog.theme && s.get.dcatapit.title == catalog.title){
+                Logger.debug("owner_org ,theme and title correspond")
                 val newMeta = lastSyncronized.isEmpty match {
-                  case true => s.get.copy (dcatapit = catalog)
+                  case true => {
+                    Logger.debug("field lastSyncronized is empty ")
+                    s.get.copy (dcatapit = catalog)
+                  }
                   case false => {
+                    Logger.debug("field lastSyncronized is not empty ")
                     s.get.operational.ext_opendata match {
                       case Some(e) => {
+                        Logger.debug("object ExtOpenData is not empty ")
                         val exod: ExtOpenData = e.copy(lastSyncronized = lastSyncronized)
                         val op: Operational = s.get.operational.copy(ext_opendata = Some(exod))
                         val meta: MetaCatalog = s.get.copy(dcatapit = catalog)
                         val meta2: MetaCatalog = meta.copy(operational = op)
                         meta2
                       }
-                      case _ => None
+                      case _ =>{
+                        Logger.debug("object ExtOpenData is empty ");  None
+                      }
                     }
                   }
                 }
@@ -76,10 +86,14 @@ class CatalogRepositoryMongo extends CatalogRepository{
                     val obj = com.mongodb.util.JSON.parse (json.toString () ).asInstanceOf[DBObject]
                     val responseUpdates = coll.update (query, obj)
                     mongoClient.close ()
-                    if (responseUpdates.isUpdateOfExisting)
-                      Future.successful(Right(Success ("Mongo update: success", None)))
-                    else
-                      Future.successful(Left(Error ("Error update", Some (500), None)))
+                    if (responseUpdates.isUpdateOfExisting) {
+                      Logger.debug("success update")
+                      Future.successful(Right(Success("Mongo update: success", None)))
+                    }
+                    else {
+                      Logger.debug("fail update")
+                      Future.successful(Left(Error("Error update", Some(500), None)))
+                    }
                   }
                   case _ => Future.successful(Left(Error ("Error update: ext_opendata is null", Some (400), None)))
                 }
@@ -87,36 +101,53 @@ class CatalogRepositoryMongo extends CatalogRepository{
               else
                 Future.successful(Left(Error("Error update: fields not equal", Some(401), None)))
             }
-            case _ => Future.successful(Left(Error("Error update", Some(401), None)))
+            case _ => {
+              Logger.debug("error in parse of MetaCatalog")
+              Future.successful(Left(Error("Error update", Some(401), None)))
+            }
           }
         }
-        case _ => Future.successful(Left(Error("Error update: name of dataset not found", Some(404), None)))
+        case _ => {
+          Logger.debug("error in parse of MetaCatalog")
+          Future.successful(Left(Error("Error update: name of dataset not found", Some(404), None)))
+        }
       }
     }
     else {
+      Logger.debug("User not is SysAdmin")
       val query = MongoDBObject("dcatapit.name" -> catalog.name)
       val result = coll.findOne(query)
       result match {
         case Some(mongoResponse) => {
+          Logger.debug("Dataset found with query")
           val jsonString = com.mongodb.util.JSON.serialize(mongoResponse)
           val json = Json.parse(jsonString)
           val metaCatalogJs = json.validate[MetaCatalog]
           metaCatalogJs match {
             case s: JsSuccess[MetaCatalog] => {
               if(s.get.dcatapit.author == Some(credentialAuthor)){
+                Logger.debug("author corresponds")
                 if(s.get.dcatapit.owner_org == catalog.owner_org && s.get.dcatapit.theme == catalog.theme && s.get.dcatapit.title == catalog.title) {
+                  Logger.debug("owner_org ,theme and title correspond")
                   val newMeta = lastSyncronized.isEmpty match {
-                    case true => s.get.copy (dcatapit = catalog)
+                    case true => {
+                      Logger.debug("field lastSyncronized is empty ")
+                      s.get.copy (dcatapit = catalog)
+                    }
                     case false => {
+                      Logger.debug("field lastSyncronized is not empty ")
                       s.get.operational.ext_opendata match {
                         case e: ExtOpenData => {
+                          Logger.debug("object ExtOpenData is not empty ")
                           val exod: ExtOpenData = e.copy(lastSyncronized = lastSyncronized)
                           val op: Operational = s.get.operational.copy(ext_opendata = Some(exod))
                           val meta: MetaCatalog = s.get.copy(dcatapit = catalog)
                           val meta2: MetaCatalog = meta.copy(operational = op)
                           meta2
                         }
-                        case _ => None
+                        case _ => {
+                          Logger.debug("object ExtOpenData is empty ");  None
+                        }
                       }
                     }
                   }
@@ -126,10 +157,14 @@ class CatalogRepositoryMongo extends CatalogRepository{
                       val obj = com.mongodb.util.JSON.parse (json.toString () ).asInstanceOf[DBObject]
                       val responseUpdates = coll.update (query, obj)
                       mongoClient.close ()
-                      if (responseUpdates.isUpdateOfExisting)
-                        Future.successful(Right(Success ("Mongo update: success", None)))
-                      else
-                        Future.successful(Left(Error ("Error update", Some (500), None)))
+                      if (responseUpdates.isUpdateOfExisting) {
+                        Logger.debug("success update")
+                        Future.successful(Right(Success("Mongo update: success", None)))
+                      }
+                      else{
+                        Logger.debug("fail update")
+                        Future.successful(Left(Error("Error update", Some(500), None)))
+                      }
                     }
                     case _ => Future.successful(Left(Error ("Error update: ext_opendata is null", Some (400), None)))
                   }
@@ -140,10 +175,16 @@ class CatalogRepositoryMongo extends CatalogRepository{
               else
                 Future.successful(Left(Error("Error update: Author not equal", Some(401), None)))
             }
-            case _ => Future.successful(Left(Error("Error update", Some(500), None)))
+            case _ => {
+              Logger.debug("error in parse of MetaCatalog")
+              Future.successful(Left(Error("Error update", Some(401), None)))
+            }
           }
         }
-        case _ => Future.successful(Left(Error("Error update: name of dataset not found", Some(404), None)))
+        case _ => {
+          Logger.debug("error in parse of MetaCatalog")
+          Future.successful(Left(Error("Error update", Some(401), None)))
+        }
       }
     }
   }
