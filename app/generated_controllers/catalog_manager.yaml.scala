@@ -49,7 +49,7 @@ import it.gov.daf.catalogmanager.nifi.Nifi
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-                        
+                                
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -343,7 +343,7 @@ package catalog_manager.yaml {
         }
         val getByNameOpenData = getByNameOpenDataAction { (dataSetFields: DataSetFields) =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.getByNameOpenData
-            RequestContext.execInContext[Future[GetByNameOpenDataType[T] forSome { type T }]]("isPresentOnCatalog") { () =>
+            RequestContext.execInContext[Future[GetByNameOpenDataType[T] forSome { type T }]]("getByNameOpenData") { () =>
                 val result = ServiceRegistry.catalogRepository.getByNameOpenData(dataSetFields)
                 result match {
                     case Some(metacatalog) => GetByNameOpenData200(metacatalog)
@@ -520,7 +520,7 @@ package catalog_manager.yaml {
         }
         val isPresentOpenData = isPresentOpenDataAction { (dataSetFields: DataSetFields) =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.isPresentOpenData
-            RequestContext.execInContext[Future[IsPresentOpenDataType[T] forSome { type T }]]("isPresentOnCatalog") { () =>
+            RequestContext.execInContext[Future[IsPresentOpenDataType[T] forSome { type T }]]("isPresentOpenData") { () =>
                 val result = ServiceRegistry.catalogRepository.isPresentOpenData(dataSetFields)
                 result.flatMap {
                     case Right(dataset) => IsPresentOpenData200(dataset)
@@ -620,7 +620,7 @@ package catalog_manager.yaml {
         }
         val setOperationalStateInactive = setOperationalStateInactiveAction { (datasetName: String) =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.setOperationalStateInactive
-            RequestContext.execInContext[Future[SetOperationalStateInactiveType[T] forSome { type T }]]("isPresentOnCatalog") { () =>
+            RequestContext.execInContext[Future[SetOperationalStateInactiveType[T] forSome { type T }]]("setOperationalStateInactive") { () =>
                 val credentialAuthor = CredentialManager.readCredentialFromRequest(currentRequest).username
                 val isDafSysAdmin = CredentialManager.isDafSysAdmin(currentRequest)
                 val result = ServiceRegistry.catalogRepository.setOperationalStateInactive(datasetName,isDafSysAdmin,credentialAuthor)
@@ -773,7 +773,7 @@ package catalog_manager.yaml {
         val updateDcatapit = updateDcatapitAction { input: (Dataset, MetadataCat) =>
             val (catalog, lastSyncronized) = input
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.updateDcatapit
-            RequestContext.execInContext[Future[UpdateDcatapitType[T] forSome { type T }]]("isPresentOnCatalog") { () =>
+            RequestContext.execInContext[Future[UpdateDcatapitType[T] forSome { type T }]]("updateDcatapit") { () =>
               def parseError(error: Error) ={
                   error.code match{
                       case Some(400) => UpdateDcatapit400(error)
