@@ -60,7 +60,7 @@ class CatalogRepositoryMongo extends CatalogRepository{
                 Logger.debug("owner_org ,theme and title correspond")
                 val newMeta = lastSyncronized.isEmpty match {
                   case true => {
-                    Logger.debug("field lastSyncronized is empty ")
+                    Logger.debug("field lastSyncronized is empty")
                     s.get.copy (dcatapit = catalog)
                   }
                   case false => {
@@ -95,20 +95,25 @@ class CatalogRepositoryMongo extends CatalogRepository{
                       Future.successful(Left(Error("Error update", Some(500), None)))
                     }
                   }
-                  case _ => Future.successful(Left(Error ("Error update: ext_opendata is null", Some (400), None)))
+                  case _ =>{
+                    Logger.debug("Error: ext_opendata is null")
+                    Future.successful(Left(Error ("Error update: ext_opendata is null", Some (400), None)))
+                  }
                 }
               }
-              else
+              else{
+                Logger.debug("Error: fields not equal")
                 Future.successful(Left(Error("Error update: fields not equal", Some(401), None)))
+              }
             }
             case _ => {
-              Logger.debug("error in parse of MetaCatalog")
+              Logger.debug("Error in parse of MetaCatalog")
               Future.successful(Left(Error("Error update", Some(401), None)))
             }
           }
         }
         case _ => {
-          Logger.debug("error in parse of MetaCatalog")
+          Logger.debug("Error: name of dataset not found")
           Future.successful(Left(Error("Error update: name of dataset not found", Some(404), None)))
         }
       }
@@ -135,10 +140,10 @@ class CatalogRepositoryMongo extends CatalogRepository{
                       s.get.copy (dcatapit = catalog)
                     }
                     case false => {
-                      Logger.debug("field lastSyncronized is not empty ")
+                      Logger.debug("field lastSyncronized is not empty")
                       s.get.operational.ext_opendata match {
                         case e: ExtOpenData => {
-                          Logger.debug("object ExtOpenData is not empty ")
+                          Logger.debug("object ExtOpenData is not empty")
                           val exod: ExtOpenData = e.copy(lastSyncronized = lastSyncronized)
                           val op: Operational = s.get.operational.copy(ext_opendata = Some(exod))
                           val meta: MetaCatalog = s.get.copy(dcatapit = catalog)
@@ -146,14 +151,14 @@ class CatalogRepositoryMongo extends CatalogRepository{
                           meta2
                         }
                         case _ => {
-                          Logger.debug("object ExtOpenData is empty ");  None
+                          Logger.debug("object ExtOpenData is empty");  None
                         }
                       }
                     }
                   }
                   newMeta match{
                     case m: MetaCatalog =>{
-                      val json: JsValue = MetaCatalogWrites.writes (m)
+                      val json: JsValue = MetaCatalogWrites.writes(m)
                       val obj = com.mongodb.util.JSON.parse (json.toString () ).asInstanceOf[DBObject]
                       val responseUpdates = coll.update (query, obj)
                       mongoClient.close ()
@@ -166,24 +171,31 @@ class CatalogRepositoryMongo extends CatalogRepository{
                         Future.successful(Left(Error("Error update", Some(500), None)))
                       }
                     }
-                    case _ => Future.successful(Left(Error ("Error update: ext_opendata is null", Some (400), None)))
+                    case _ => {
+                        Logger.debug("Error: ext_opendata is null")
+                        Future.successful(Left(Error ("Error update: ext_opendata is null", Some (400), None)))
+                    }
                   }
                 }
-                else
+                else {
+                  Logger.debug("Error: fields not equal")
                   Future.successful(Left(Error("Error update: fields not equal", Some(401), None)))
+                }
               }
-              else
+              else{
+                Logger.debug("Error: Author not equal")
                 Future.successful(Left(Error("Error update: Author not equal", Some(401), None)))
+              }
             }
             case _ => {
-              Logger.debug("error in parse of MetaCatalog")
-              Future.successful(Left(Error("Error update", Some(401), None)))
+              Logger.debug("Error in parse of MetaCatalog")
+              Future.successful(Left(Error("Error update: error in parse of MetaCatalog", Some(401), None)))
             }
           }
         }
         case _ => {
-          Logger.debug("error in parse of MetaCatalog")
-          Future.successful(Left(Error("Error update", Some(401), None)))
+          Logger.debug("Error: name of dataset not found")
+          Future.successful(Left(Error("Error update: name of dataset not found", Some(404), None)))
         }
       }
     }
