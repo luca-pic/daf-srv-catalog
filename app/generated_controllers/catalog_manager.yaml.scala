@@ -472,16 +472,8 @@ package catalog_manager.yaml {
                         Logger.logger.debug(s"error in create catalog ${catalog.dcatapit.name}")
                         Createdatasetcatalog500(created.left.get)
                     }
-                    if(created.isRight){
-                        Logger.logger.debug(s"${credentials.username} added ${catalog.dcatapit.name.get}")
-                        Createdatasetcatalog200(created.right.get)
-                    }
-                    else{
-                        Logger.logger.debug(s"error in create catalog ${catalog.dcatapit.name.get}")
-                        Createdatasetcatalog500(created.left.get)
-                    }
-
-                }else Createdatasetcatalog401(s"Admin or editor permissions required (organization: $datasetOrg)")
+                }else
+                    Logger.logger.debug(s"Admin or editor permissions required (organization: $datasetOrg)"); Createdatasetcatalog401(s"Admin or editor permissions required (organization: $datasetOrg)")
             }
             //NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.createdatasetcatalog
