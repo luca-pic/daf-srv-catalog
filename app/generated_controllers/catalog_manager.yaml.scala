@@ -449,30 +449,19 @@ package catalog_manager.yaml {
                 val datasetOrg = catalog.dcatapit.owner_org.getOrElse("EMPTY ORG!")
                 val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
                 if( CredentialManager.isOrgAdmin(currentRequest,datasetOrg) || CredentialManager.isOrgEditor(currentRequest,datasetOrg) ) {
-                    val created = ServiceRegistry.catalogService.createCatalog(catalog, Option(credentials.username), ws)
-                    //If(!created.message.equals("Error")) sendMessaggeKafkaProxy(credentials.username, catalog)
-                    //sendMessaggeKafkaProxy(credentials.username, catalog)
-                    //logger.info("sending to kafka")
-                    if(created.isRight){
-                        Logger.logger.debug(s"${credentials.username} added ${catalog.dcatapit.name}")
-                        Createdatasetcatalog200(created.right.get)
+                    ServiceRegistry.catalogService.createCatalog(catalog, Option(credentials.username), ws) match {
+                        case Left(l)  =>
+                            Logger.logger.debug(s"error in create catalog ${catalog.dcatapit.name}")
+                            Createdatasetcatalog500(l)
+                        case Right(r) =>
+                            Logger.logger.debug(s"${credentials.username} added ${catalog.dcatapit.name}")
+                            Createdatasetcatalog200(r)
                     }
-                    else{
-                        Logger.logger.debug(s"error in create catalog ${catalog.dcatapit.name}")
-                        Createdatasetcatalog500(created.left.get)
-                    }
-                    if(created.isRight){
-                        Logger.logger.debug(s"${credentials.username} added ${catalog.dcatapit.name.get}")
-                        Createdatasetcatalog200(created.right.get)
-                    }
-                    else{
-                        Logger.logger.debug(s"error in create catalog ${catalog.dcatapit.name.get}")
-                        Createdatasetcatalog500(created.left.get)
-                    }
-
-                }else Createdatasetcatalog401(s"Admin or editor permissions required (organization: $datasetOrg)")
+                }else {
+                    Logger.logger.debug(s"Admin or editor permissions required (organization: $datasetOrg)");
+                    Createdatasetcatalog401(s"Admin or editor permissions required (organization: $datasetOrg)")
+                }
             }
-            //NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.createdatasetcatalog
         }
         val sendToKafka = sendToKafkaAction { (kafkaMsgInfo: KafkaMessageInfo) =>  
