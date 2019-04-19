@@ -49,7 +49,7 @@ import it.gov.daf.catalogmanager.nifi.Nifi
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-            
+        
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -104,7 +104,7 @@ package catalog_manager.yaml {
             }
         }
 
-        private def sendGenericMessageToKafka(group: Option[String], userToSend: Option[String], topic: String, notificationType: String, title: String, description: String, link: Option[String], token: String) ={
+        private def sendGenericMessageToKafka(group: Option[String], userToSend: Option[String], topic: String, notificationType: String, title: String, description: String, link: Option[String], expirationDate: Option[String], token: String) ={
             Logger.logger.debug(s"kafka proxy $KAFKAPROXY, topic $topic")
 
             val receiver = userToSend match {
@@ -113,8 +113,10 @@ package catalog_manager.yaml {
             }
 
             val message = s"""{
-                             |"records":[{"value":{$receiver, "token":"$token","notificationtype": "$notificationType", "info":{
-                             |"title":"$title","description":"$description","link":"${link.getOrElse("")}"}}}]}""".stripMargin
+                             |"records":[{"value":{$receiver, "token":"$token","notificationtype": "$notificationType",
+                             |"endDate":"${expirationDate.orNull}",
+                             |"info":{"title":"$title","description":"$description","link":"${link.orNull}"}
+                             |}}]}""".stripMargin
 
             val jsonBody = Json.parse(message)
 
@@ -195,9 +197,9 @@ package catalog_manager.yaml {
 
                 def sendNotifications(user: String, datasetName: String, error: String, token: String) = {
                     //user notification
-                    sendGenericMessageToKafka(None, Some(user), "notification", "delete_error", s"Dataset $datasetName non cancellato", s"Non è stato possibile cancellare il dataset $datasetName, è stata contattata l'assistenza", None, token)
+                    sendGenericMessageToKafka(None, Some(user), "notification", "delete_error", s"Dataset $datasetName non cancellato", s"Non è stato possibile cancellare il dataset $datasetName, è stata contattata l'assistenza", None, None, token)
                     //admin notification
-                    sendGenericMessageToKafka(Some(DAF_ADMIN_GROUP), None, "notification", "delete_error", s"Dataset $datasetName non cancellato", error, None, token)
+                    sendGenericMessageToKafka(Some(DAF_ADMIN_GROUP), None, "notification", "delete_error", s"Dataset $datasetName non cancellato", error, None, None, token)
                 }
 
                 val credential = CredentialManager.readCredentialFromRequest(currentRequest)
@@ -446,30 +448,19 @@ package catalog_manager.yaml {
                 val datasetOrg = catalog.dcatapit.owner_org.getOrElse("EMPTY ORG!")
                 val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
                 if( CredentialManager.isOrgAdmin(currentRequest,datasetOrg) || CredentialManager.isOrgEditor(currentRequest,datasetOrg) ) {
-                    val created = ServiceRegistry.catalogService.createCatalog(catalog, Option(credentials.username), ws)
-                    //If(!created.message.equals("Error")) sendMessaggeKafkaProxy(credentials.username, catalog)
-                    //sendMessaggeKafkaProxy(credentials.username, catalog)
-                    //logger.info("sending to kafka")
-                    if(created.isRight){
-                        Logger.logger.debug(s"${credentials.username} added ${catalog.dcatapit.name}")
-                        Createdatasetcatalog200(created.right.get)
+                    ServiceRegistry.catalogService.createCatalog(catalog, Option(credentials.username), ws) match {
+                        case Left(l)  =>
+                            Logger.logger.debug(s"error in create catalog ${catalog.dcatapit.name}")
+                            Createdatasetcatalog500(l)
+                        case Right(r) =>
+                            Logger.logger.debug(s"${credentials.username} added ${catalog.dcatapit.name}")
+                            Createdatasetcatalog200(r)
                     }
-                    else{
-                        Logger.logger.debug(s"error in create catalog ${catalog.dcatapit.name}")
-                        Createdatasetcatalog500(created.left.get)
-                    }
-                    if(created.isRight){
-                        Logger.logger.debug(s"${credentials.username} added ${catalog.dcatapit.name.get}")
-                        Createdatasetcatalog200(created.right.get)
-                    }
-                    else{
-                        Logger.logger.debug(s"error in create catalog ${catalog.dcatapit.name.get}")
-                        Createdatasetcatalog500(created.left.get)
-                    }
-
-                }else Createdatasetcatalog401(s"Admin or editor permissions required (organization: $datasetOrg)")
+                }else {
+                    Logger.logger.debug(s"Admin or editor permissions required (organization: $datasetOrg)");
+                    Createdatasetcatalog401(s"Admin or editor permissions required (organization: $datasetOrg)")
+                }
             }
-            //NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.createdatasetcatalog
         }
         val sendToKafka = sendToKafkaAction { (kafkaMsgInfo: KafkaMessageInfo) =>  
@@ -487,6 +478,7 @@ package catalog_manager.yaml {
                             kafkaMsgInfo.title,
                             kafkaMsgInfo.description,
                             kafkaMsgInfo.link,
+                            kafkaMsgInfo.expirationDate,
                             t) flatMap{
                             case Right(r) => SendToKafka200(r)
                             case Left(l) => SendToKafka500(l)
@@ -946,7 +938,7 @@ package catalog_manager.yaml {
                         case e: JsError => throw new Exception(JsError.toJson(e).toString())
                     }
 
-                    createFeed onComplete (r => Logger.logger.debug(s"kyloResp: ${r.get.status}"))
+                    createFeed onComplete (r => Logger.logger.debug(s"kyloResp ${r.get.status}: ${r.get.body}"))
 
                     val result = createFeed.flatMap {
                         // Assuming status 200 (OK) is a valid result for you.
