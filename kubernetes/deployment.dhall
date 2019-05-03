@@ -8,7 +8,7 @@ let config =  /usr/local/var/dhall-kubernetes/api/Deployment/default
                   ⫽ /env/nexus
                   ⫽ { name = "catalog-manager"
                     , imageName = "daf-catalog-manager"
-                    , imageTag = "2.0.22"
+                    , imageTag = "2.0.23"
                     , port = [ 9000 ] : Optional Natural
                     , mounts = ./volumeMounts
                     , simpleEnvVars = [ { mapKey = "JAVA_OPTS", mapValue = "-server -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:+PerfDisableSharedMem -XX:+ParallelRefProcEnabled -Xmx2g -Xms2g -XX:MaxPermSize=1024m" }

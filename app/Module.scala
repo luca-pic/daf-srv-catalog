@@ -1,4 +1,5 @@
 import com.google.inject.{ AbstractModule, Singleton }
+//import it.gov.daf.catalogmanager.listeners.{ IngestionListener, IngestionListenerImpl }
 import it.gov.daf.common.sso.common.{ CacheWrapper, LoginClient }
 import it.gov.daf.common.sso.client.LoginClientRemote
 import org.slf4j.LoggerFactory
