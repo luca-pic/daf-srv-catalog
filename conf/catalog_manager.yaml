@@ -280,6 +280,10 @@ paths:
           description: Error Message
           schema:
             type: string
+        409:
+          description: catalog alredy exist
+          schema:
+            $ref: '#/definitions/Error'
         default:
           description: Unexpected error
           schema:
