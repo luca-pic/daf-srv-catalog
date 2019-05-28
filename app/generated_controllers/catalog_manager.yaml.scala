@@ -49,7 +49,7 @@ import it.gov.daf.catalogmanager.nifi.Nifi
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-                                            
+                                                                        
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -460,13 +460,18 @@ package catalog_manager.yaml {
                 val datasetOrg = catalog.dcatapit.owner_org.getOrElse("EMPTY ORG!")
                 val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
                 if( CredentialManager.isOrgAdmin(currentRequest,datasetOrg) || CredentialManager.isOrgEditor(currentRequest,datasetOrg) ) {
-                    ServiceRegistry.catalogService.createCatalog(catalog, Option(credentials.username), ws) match {
-                        case Left(l)  =>
-                            Logger.logger.debug(s"error in create catalog ${catalog.dcatapit.name}")
-                            Createdatasetcatalog500(l)
-                        case Right(r) =>
-                            Logger.logger.debug(s"${credentials.username} added ${catalog.dcatapit.name}")
-                            Createdatasetcatalog200(r)
+                    if( ServiceRegistry.catalogService.isPresentOnCatalog(catalog.dcatapit.name).getOrElse(false) ) {
+                        Logger.debug(s"catalog ${catalog.dcatapit.name} alredy exist")
+                        Createdatasetcatalog409(Error(s"Catalog ${catalog.dcatapit.name} alredy exist", Some(409), None))
+                    } else {
+                        ServiceRegistry.catalogService.createCatalog(catalog, Option(credentials.username), ws) match {
+                            case Left(l)  =>
+                                Logger.logger.debug(s"error in create catalog ${catalog.dcatapit.name}")
+                                Createdatasetcatalog500(l)
+                            case Right(r) =>
+                                Logger.logger.debug(s"${credentials.username} added ${catalog.dcatapit.name}")
+                                Createdatasetcatalog200(r)
+                        }
                     }
                 }else {
                     Logger.logger.debug(s"Admin or editor permissions required (organization: $datasetOrg)");
