@@ -2121,7 +2121,6 @@ definitions:
     required:
       - id
       - name
-      - url
       - resourceId
       - resourceName
       - resourceUrl
