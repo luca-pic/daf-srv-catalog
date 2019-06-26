@@ -19,7 +19,7 @@ class Nifi @Inject()(ws :WSClient, config: ConfigurationProvider){
   def startDerivedProcessor(orgName: String, feedName: String): Future[Either[Error, Success]] ={
     for {
       responseGetProcessors <- getProcessors
-      id <- extractIdFromJson(responseGetProcessors, orgName, feedName)
+      id <- extractIdFromJsonById(responseGetProcessors, orgName, feedName)
       (clientId, version) <- getRevision(id)
       _ <- callProcessor(id, clientId, version, "stopped")
       _ <- callProcessor(id, clientId, version+1, "running")
@@ -35,7 +35,7 @@ class Nifi @Inject()(ws :WSClient, config: ConfigurationProvider){
       .get()
   }
 
-  private def extractIdFromJson(responseNifi: WSResponse, orgName: String, feedName: String): Future[String] = {
+  private def extractIdFromJsonById(responseNifi: WSResponse, orgName: String, feedName: String): Future[String] = {
     Logger.debug(s"nifi reponse for feed $feedName is ${responseNifi.statusText}")
     val orgJson: JsValue = (responseNifi.json \ "processGroupStatus" \ "aggregateSnapshot" \ "processGroupStatusSnapshots" \\ "processGroupStatusSnapshot")
       .filter(jsValue =>
@@ -89,5 +89,18 @@ class Nifi @Inject()(ws :WSClient, config: ConfigurationProvider){
         case _   => Left(Error(res.statusText, Some(res.status), None))
       }
     }
+  }
+
+
+  def deleteProcessor(datasetName: String, orgName: String) = {
+    for{
+      responseGetProcessors <- getProcessors
+
+
+    }
+  }
+
+  private def getOrgProcessGroup(responseNifi: WSResponse, orgName: String): Future[Either[Error, String]] = {
+
   }
 }
