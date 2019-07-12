@@ -167,8 +167,8 @@ object KyloTrasformers {
          (__ \ 'systemFeedName).json.put(JsString(metaCatalog.dcatapit.holder_identifier.get + "_o_" + metaCatalog.dcatapit.name)) and
          (__ \ 'templateId).json.put(JsString((template \ "id").get.as[String])) and
          (__ \ 'templateName).json.put(JsString((template \ "templateName").get.as[String])) and
-         (__ \ 'inputProcessorType).json.put(JsString(((template \ "inputProcessors")(0) \ "type").get.as[String])) and
-         (__ \ 'inputProcessorName).json.put(JsString(((template \ "inputProcessors")(0) \ "name").get.as[String])) and
+         (__ \ 'inputProcessorType).json.put(JsString((templates.head \ "processorType").get.as[String])) and
+         (__ \ 'inputProcessorName).json.put(JsString((templates.head \ "processorName").get.as[String])) and
          (__ \ 'properties).json.put(JsArray(templates)) and
          ((__ \ 'table) \ 'tableSchema).json.put(Json.obj("name" -> (metaCatalog.dcatapit.holder_identifier.get + "_o_" + metaCatalog.dcatapit.name)
          , "fields" -> (inferJson \ "fields").as[JsArray]  )) and

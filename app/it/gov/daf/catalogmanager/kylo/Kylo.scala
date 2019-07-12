@@ -23,6 +23,8 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
   val KYLOPWD = config.get.getString("kylo.userpwd").getOrElse("XXXXXXXXXXX")
   val SFTPHOSTNAME = config.get.getString("sftp.hostname").getOrElse("XXXXXXXXXXX")
 
+  val RecoveryAreaProcessorName = "Get File from Recovery Area"
+
   import scala.concurrent.ExecutionContext.Implicits._
 
   private def getFeedInfo(feedName: String, user: String): Future[Either[Error, String]] = {
@@ -115,9 +117,7 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
   }
 
 
-  private def templatesById(id :Option[String],
-                            fileType :String,
-                            feed :MetaCatalog): Future[(JsValue, List[JsObject])] = {
+  private def templatesById(id :Option[String], fileType :String, feed :MetaCatalog): Future[(JsValue, List[JsObject])] = {
     val idExt = id.getOrElse("")
     val url = s"/api/v1/feedmgr/templates/registered/$idExt?allProperties=true&feedEdit=true"
     ws.url(KYLOURL + url)
@@ -134,10 +134,7 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
     }
   }
 
-  private def webServiceTemplates(id :Option[String],
-                                  fileType: String,
-                                  feed :MetaCatalog): Future[(JsValue, List[JsObject])]
-  = {
+  private def webServiceTemplates(id :Option[String], fileType: String, feed :MetaCatalog): Future[(JsValue, List[JsObject])] = {
     val idExt = id.getOrElse("")
     val url = s"/api/v1/feedmgr/templates/registered/$idExt?allProperties=true&feedEdit=true"
     val testWs  = feed.operational.input_src.srv_pull.get.head.url
@@ -164,11 +161,15 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
   }
 
   private def hdfsTemplate(id: Option[String], fileType: String, hdfsPath: String) = {
+
     val url = s"/api/v1/feedmgr/templates/registered/${id.getOrElse("")}?allProperties=true&feedEdit=true"
     ws.url(KYLOURL + url)
       .withAuth(KYLOUSER, KYLOPWD, WSAuthScheme.BASIC)
       .get().map { resp =>
+      Logger.logger.debug(s"Kylo resp: ${resp.body}")
+
       val template = resp.json
+
       val propertiesEditable = (template \ "properties").as[List[JsValue]]
         .filter(x => (x \ "userEditable").as[Boolean])
       val modifiedTemplate: List[JsObject] = propertiesEditable.map { temp =>
@@ -180,23 +181,24 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
         transTemplate
       }
 
-      (template, modifiedTemplate)
+      (template, modifiedTemplate.filterNot{x => (x \ "processorName").getOrElse(JsString("")).as[String].equals(RecoveryAreaProcessorName)})
     }
   }
 
-  private def sftpTemplates(id :Option[String],
-                            fileType: String,
-                            sftpPath: String): Future[(JsValue, List[JsObject])]
-  = {
+  private def sftpTemplates(id :Option[String], fileType: String, sftpPath: String): Future[(JsValue, List[JsObject])] = {
     val idExt = id.getOrElse("")
     val url = s"/api/v1/feedmgr/templates/registered/$idExt?allProperties=true&feedEdit=true"
     ws.url(KYLOURL + url)
       .withAuth(KYLOUSER, KYLOPWD, scheme = WSAuthScheme.BASIC)
       .get().map { resp =>
       val templates = resp.json
+      val x = (templates \ "properties").as[List[JsValue]]
+        .filter(x => { (x \ "userEditable").as[Boolean] })
+        .filterNot(x => (x \ "processorName").getOrElse(JsString("")).as[String].equals(RecoveryAreaProcessorName))
       val templatesEditable  = (templates \ "properties").as[List[JsValue]]
         .filter(x => { (x \ "userEditable").as[Boolean] })
-      val modifiedTemplates: List[JsObject] = templatesEditable.map { temp =>
+//      val modifiedTemplates: List[JsObject] = templatesEditable.map { temp =>
+      val modifiedTemplates: List[JsObject] = x.map { temp =>
         val key = (temp \ "key").as[String]
         val transTemplate = key match {
           case "Hostname" => temp.transform(KyloTrasformers.transformTemplates(SFTPHOSTNAME)).get
@@ -205,15 +207,13 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
         }
         transTemplate
       }
-
+      Logger.logger.debug(s"modifiedTemplates: $modifiedTemplates")
+      Logger.logger.debug(s"templates: $templates")
       (templates, modifiedTemplates)
     }
   }
 
-  private def transformationTemplate(id :Option[String],
-                            fileType: String,
-                            sftpPath: String): Future[(JsValue, List[JsObject])]
-  = {
+  private def transformationTemplate(id :Option[String], fileType: String, sftpPath: String): Future[(JsValue, List[JsObject])] = {
     val idExt = id.getOrElse("")
     val url = s"/api/v1/feedmgr/templates/registered/$idExt?allProperties=true&feedEdit=true"
     ws.url(KYLOURL + url)
@@ -246,21 +246,23 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
 
   def wsIngest(fileType: String, meta: MetaCatalog): Future[(JsValue, List[JsObject])] = {
     for {
-      idOpt <- templateIdByName("Webservice Ingest")
+      idOpt <- templateIdByName("Webservice & AUTOREC Ingest")
+//      idOpt <- templateIdByName("Webservice Ingest")
       templates <- webServiceTemplates(idOpt, fileType, meta)
     } yield templates
   }
 
   def sftpRemoteIngest(fileType: String, sftpPath: String): Future[(JsValue, List[JsObject])] = {
     for {
-      idOpt <- templateIdByName("Sftp Ingest")
+      idOpt <- templateIdByName("SFTP & AUTOREC Ingest")
+//      idOpt <- templateIdByName("Sftp Ingest")
       templates <- sftpTemplates(idOpt, fileType, sftpPath)
     } yield templates
   }
 
   def hdfsIngest(fileType: String, hdfsPath: String) = {
     for{
-      idOpt <- templateIdByName("HDFS Ingest")
+      idOpt <- templateIdByName("HDFS & AUTOREC Ingest")
       templates <- hdfsTemplate(idOpt, fileType, hdfsPath)
     } yield templates
   }
