@@ -1,6 +1,6 @@
 package it.gov.daf.catalogmanager.repository.catalog
 import catalog_manager.yaml.ResponseWrites.MetaCatalogWrites
-import catalog_manager.yaml.{DataSetFields, Dataset, DatasetNameFields, Error, ExtOpenData, LinkedDataset, LinkedParams, MetaCatalog, MetadataCat, Operational, OperationalExt_opendata, ResponseWrites, Success}
+import catalog_manager.yaml.{DataSetFields, Dataset, DatasetNameFields, Error, ExtOpenData, LinkedDataset, LinkedParams, MetaCatalog, Operational, ResponseWrites, Success}
 import com.mongodb
 import com.mongodb.{BasicDBObject, DBObject}
 import com.mongodb.casbah.MongoClient
@@ -458,7 +458,7 @@ class CatalogRepositoryMongo extends CatalogRepository{
     metaCatalog
   }
 
-  def createCatalogExtOpenData(metaCatalog: MetaCatalog, callingUserid :MetadataCat, ws :WSClient) :Success = {
+  def createCatalogExtOpenData(metaCatalog: MetaCatalog, callingUserid :Option[String], ws :WSClient) :Success = {
 
     import catalog_manager.yaml.ResponseWrites.MetaCatalogWrites
 
@@ -511,7 +511,7 @@ class CatalogRepositoryMongo extends CatalogRepository{
     Success(msg, Some(msg))
   }
 
-  def createCatalog(metaCatalog: MetaCatalog, callingUserid :MetadataCat, ws :WSClient): Either[Error, Success] = {
+  def createCatalog(metaCatalog: MetaCatalog, callingUserid :Option[String], ws :WSClient): Either[Error, Success] = {
 
     import catalog_manager.yaml.ResponseWrites.MetaCatalogWrites
 

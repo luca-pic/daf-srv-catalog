@@ -90,17 +90,4 @@ class Nifi @Inject()(ws :WSClient, config: ConfigurationProvider){
       }
     }
   }
-
-
-  def deleteProcessor(datasetName: String, orgName: String) = {
-    for{
-      responseGetProcessors <- getProcessors
-
-
-    }
-  }
-
-  private def getOrgProcessGroup(responseNifi: WSResponse, orgName: String): Future[Either[Error, String]] = {
-
-  }
 }

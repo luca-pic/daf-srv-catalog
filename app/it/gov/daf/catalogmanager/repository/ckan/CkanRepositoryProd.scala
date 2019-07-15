@@ -2,7 +2,7 @@ package it.gov.daf.catalogmanager.repository.ckan
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import catalog_manager.yaml.{AutocompRes, Credentials, Relationship, Dataset, Error, MetadataCat, Organization, ResourceSize, Success, User}
+import catalog_manager.yaml.{AutocompRes, Credentials, Relationship, Dataset, Error, Organization, Success, User}
 import com.mongodb.{DBObject, MongoCredential, ServerAddress}
 import com.mongodb.casbah.MongoClient
 import com.mongodb.casbah.commons.MongoDBObject
@@ -79,7 +79,7 @@ class CkanRepositoryProd extends CkanRepository{
 
   }
 
-  def getMongoUser(name:String, callingUserid :MetadataCat): JsResult[User] = {
+  def getMongoUser(name:String, callingUserid :Option[String]): JsResult[User] = {
 
     var jsUser = readMongo("users","name", name )
 
@@ -122,7 +122,7 @@ class CkanRepositoryProd extends CkanRepository{
       WebServiceUtil.getMessageFromCkanError(json)
   }
 
-  def updateOrganization(orgId: String, jsonOrg: JsValue, callingUserid :MetadataCat): Future[String] = {
+  def updateOrganization(orgId: String, jsonOrg: JsValue, callingUserid :Option[String]): Future[String] = {
 
     val wsClient = AhcWSClient()
     val url =  LOCALURL + "/ckan/updateOrganization/" + orgId
@@ -135,7 +135,7 @@ class CkanRepositoryProd extends CkanRepository{
 
   }
 
-  def patchOrganization(orgId: String, jsonOrg: JsValue, callingUserid :MetadataCat): Future[String] = {
+  def patchOrganization(orgId: String, jsonOrg: JsValue, callingUserid :Option[String]): Future[String] = {
 
     val wsClient = AhcWSClient()
     val url =  LOCALURL + "/ckan/patchOrganization/" + orgId
@@ -148,7 +148,7 @@ class CkanRepositoryProd extends CkanRepository{
 
   }
 
-  def createUser(jsonUser: JsValue, callingUserid :MetadataCat): Future[String] = {
+  def createUser(jsonUser: JsValue, callingUserid :Option[String]): Future[String] = {
 
     val password = (jsonUser \ "password").get.as[String]
 
@@ -172,7 +172,7 @@ class CkanRepositoryProd extends CkanRepository{
 
   }
 
-  def getUserOrganizations(userName :String, callingUserid :MetadataCat) : Future[JsResult[Seq[Organization]]] = {
+  def getUserOrganizations(userName :String, callingUserid :Option[String]) : Future[JsResult[Seq[Organization]]] = {
 
     val wsClient = AhcWSClient()
     val url =  LOCALURL + "/ckan/userOrganizations/" + userName
@@ -197,7 +197,7 @@ class CkanRepositoryProd extends CkanRepository{
       .andThen { case _ => system.terminate() }
   }
 
-  def createDataset(jsonDataset: JsValue, callingUserid :MetadataCat): Future[String] = {
+  def createDataset(jsonDataset: JsValue, callingUserid :Option[String]): Future[String] = {
 
     val wsClient = AhcWSClient()
     val url =  LOCALURL + "/ckan/createDataset"
@@ -248,7 +248,7 @@ class CkanRepositoryProd extends CkanRepository{
     }
   }
 
-  def createOrganization(jsonDataset: JsValue, callingUserid :MetadataCat): Future[String] = {
+  def createOrganization(jsonDataset: JsValue, callingUserid :Option[String]): Future[String] = {
 
     val wsClient = AhcWSClient()
     val url =  LOCALURL + "/ckan/createOrganization"
@@ -261,10 +261,10 @@ class CkanRepositoryProd extends CkanRepository{
       .andThen { case _ => system.terminate() }
   }
 
-  def dataset(datasetId: String, callingUserid :MetadataCat): JsValue = JsString("TODO")
+  def dataset(datasetId: String, callingUserid :Option[String]): JsValue = JsString("TODO")
 
 
-  def getOrganization(orgId :String, callingUserid :MetadataCat) : Future[JsResult[Organization]] = {
+  def getOrganization(orgId :String, callingUserid :Option[String]) : Future[JsResult[Organization]] = {
 
     val wsClient = AhcWSClient()
     val url =  LOCALURL + "/ckan/organization/" + orgId
@@ -282,7 +282,7 @@ class CkanRepositoryProd extends CkanRepository{
 
   }
 
-  def getOrganizations(callingUserid :MetadataCat) : Future[JsValue] = {
+  def getOrganizations(callingUserid :Option[String]) : Future[JsValue] = {
 
     val wsClient = AhcWSClient()
     val url =  LOCALURL + "/ckan/organizations"
@@ -295,7 +295,7 @@ class CkanRepositoryProd extends CkanRepository{
   }
 
 
-  def getDatasets(callingUserid :MetadataCat) : Future[JsValue] = {
+  def getDatasets(callingUserid :Option[String]) : Future[JsValue] = {
 
     val wsClient = AhcWSClient()
     val url =  LOCALURL + "/ckan/datasets"
@@ -307,7 +307,7 @@ class CkanRepositoryProd extends CkanRepository{
       .andThen { case _ => system.terminate() }
   }
 
-  def searchDatasets( input: (MetadataCat, MetadataCat, ResourceSize, ResourceSize), callingUserid :MetadataCat ) : Future[JsResult[Seq[Dataset]]]={
+  def searchDatasets( input: (Option[String], Option[String], Option[BigInt], Option[BigInt]), callingUserid :Option[String] ) : Future[JsResult[Seq[Dataset]]]={
 
     val wsClient = AhcWSClient()
 
@@ -338,7 +338,7 @@ class CkanRepositoryProd extends CkanRepository{
 
   }
 
-  def autocompleteDatasets( input: (MetadataCat, ResourceSize), callingUserid :MetadataCat) : Future[JsResult[Seq[AutocompRes]]] = {
+  def autocompleteDatasets( input: (Option[String], Option[BigInt]), callingUserid :Option[String]) : Future[JsResult[Seq[AutocompRes]]] = {
     val wsClient = AhcWSClient()
 
     val params = Map(("q",input._1),("limit",input._2))
@@ -360,7 +360,7 @@ class CkanRepositoryProd extends CkanRepository{
       .andThen { case _ => system.terminate() }
   }
 
-  def getDatasetsWithRes( input: (ResourceSize, ResourceSize), callingUserid :MetadataCat ) : Future[JsResult[Seq[Dataset]]] = {
+  def getDatasetsWithRes( input: (Option[BigInt], Option[BigInt]), callingUserid :Option[String] ) : Future[JsResult[Seq[Dataset]]] = {
 
     val wsClient = AhcWSClient()
 
@@ -393,7 +393,7 @@ class CkanRepositoryProd extends CkanRepository{
   }
 
 
-  def testDataset(datasetId :String, callingUserid :MetadataCat) : Future[JsResult[Dataset]] = {
+  def testDataset(datasetId :String, callingUserid :Option[String]) : Future[JsResult[Dataset]] = {
 
     val wsClient = AhcWSClient()
     val url =  LOCALURL + "/ckan/dataset/" + datasetId
