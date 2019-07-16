@@ -145,6 +145,7 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
       val templates = resp.json
       val templatesEditable  = (templates \ "properties").as[List[JsValue]]
         .filter(x => { (x \ "userEditable").as[Boolean] })
+        .filterNot(x => (x \ "processorName").getOrElse(JsString("")).as[String].equals(RecoveryAreaProcessorName))
       val modifiedTemplates: List[JsObject] = templatesEditable.map { temp =>
         val key = (temp \ "key").as[String]
         val transTemplate = key match {
@@ -155,7 +156,6 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
         }
         transTemplate
       }
-
       (templates, modifiedTemplates)
     }
   }
@@ -192,13 +192,10 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
       .withAuth(KYLOUSER, KYLOPWD, scheme = WSAuthScheme.BASIC)
       .get().map { resp =>
       val templates = resp.json
-      val x = (templates \ "properties").as[List[JsValue]]
+      val templatesEditable = (templates \ "properties").as[List[JsValue]]
         .filter(x => { (x \ "userEditable").as[Boolean] })
         .filterNot(x => (x \ "processorName").getOrElse(JsString("")).as[String].equals(RecoveryAreaProcessorName))
-      val templatesEditable  = (templates \ "properties").as[List[JsValue]]
-        .filter(x => { (x \ "userEditable").as[Boolean] })
-//      val modifiedTemplates: List[JsObject] = templatesEditable.map { temp =>
-      val modifiedTemplates: List[JsObject] = x.map { temp =>
+      val modifiedTemplates: List[JsObject] = templatesEditable.map { temp =>
         val key = (temp \ "key").as[String]
         val transTemplate = key match {
           case "Hostname" => temp.transform(KyloTrasformers.transformTemplates(SFTPHOSTNAME)).get
@@ -207,8 +204,6 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
         }
         transTemplate
       }
-      Logger.logger.debug(s"modifiedTemplates: $modifiedTemplates")
-      Logger.logger.debug(s"templates: $templates")
       (templates, modifiedTemplates)
     }
   }
@@ -247,7 +242,6 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
   def wsIngest(fileType: String, meta: MetaCatalog): Future[(JsValue, List[JsObject])] = {
     for {
       idOpt <- templateIdByName("Webservice & AUTOREC Ingest")
-//      idOpt <- templateIdByName("Webservice Ingest")
       templates <- webServiceTemplates(idOpt, fileType, meta)
     } yield templates
   }
@@ -255,7 +249,6 @@ class Kylo @Inject()(ws :WSClient, config: ConfigurationProvider){
   def sftpRemoteIngest(fileType: String, sftpPath: String): Future[(JsValue, List[JsObject])] = {
     for {
       idOpt <- templateIdByName("SFTP & AUTOREC Ingest")
-//      idOpt <- templateIdByName("Sftp Ingest")
       templates <- sftpTemplates(idOpt, fileType, sftpPath)
     } yield templates
   }

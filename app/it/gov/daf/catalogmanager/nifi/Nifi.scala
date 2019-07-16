@@ -15,8 +15,6 @@ import scala.util
 import scala.util.{Failure, Try}
 
 
-//case class ErrorWrapper(error: Error, steps:Int)
-//case class NifiRevisionObject(clientId: String, version: Int)
 
 @Singleton
 class Nifi @Inject()(ws :WSClient, config: ConfigurationProvider) {
@@ -124,7 +122,7 @@ class Nifi @Inject()(ws :WSClient, config: ConfigurationProvider) {
     ws.url(s"$NifiURL/nifi-api/processors/$id").withHeaders("Content-type" -> "application/json")
       .put(json)
       .map{ res =>
-        Logger.debug(s"nifi response status $state: $res")
+        logger.debug(s"nifi response status $state: $res")
         res.status match {
           case 200 => logger.debug(s"processor $id updatate to state $state");Right(Success(res.body, None))
           case _   => logger.debug(s"processor $id not updatate to state $state"); Left(Error(res.body, Some(res.status), None))
@@ -190,19 +188,6 @@ class Nifi @Inject()(ws :WSClient, config: ConfigurationProvider) {
 
     logger.info(s"startRecoveryAreaProcessor: $componentId")
 
-//    val resp: EitherT[Future, ErrorWrapper, Success] = for{
-//      a                  <- ProcessHandler.step2( getProcessorIdByComponentId(componentId, RecoveryAreaProcessorName) )
-//      (idProcRecoveryArea: String, step0: Int) = (a._1, a._2)
-//      b                  <- ProcessHandler.step2( step0, getProcessorRevision(idProcRecoveryArea) )
-//      (nifiRevisionObject: NifiRevisionObject, step1: Int) = (b._1, b._2)
-//      c                  <- ProcessHandler.step2( step1, updateDirectoryProcRecoveryArea(idProcRecoveryArea, DirectoryPropertyName, pathRecoveryArea, nifiRevisionObject) )
-//      (_, step2: Int) = (c._1, c._2)
-//      d                  <- ProcessHandler.step2( step2, setStateProcessor(idProcRecoveryArea, nifiRevisionObject.clientId, nifiRevisionObject.version, StopStateProcessorString) )
-//      (_, step3: Int) = (d._1, d._2)
-//      e                  <- ProcessHandler.step2( step3, setStateProcessor(idProcRecoveryArea, nifiRevisionObject.clientId, nifiRevisionObject.version, RunStateProcessorString) )
-//      (response: Success, _) = (e._1, e._2)
-//    } yield response
-
     val resp: EitherT[Future, ErrorWrapper, Success] = for{
       a                  <- ProcessHandler.step2( getProcessorIdByComponentId(componentId, RecoveryAreaProcessorName) )
       (idProcRecoveryArea: String, step0: Int) = (a._1, a._2)
@@ -232,7 +217,16 @@ class Nifi @Inject()(ws :WSClient, config: ConfigurationProvider) {
   private def runStopAndRunProcessor(idProc: String, clientId: String, version: Int): Future[Either[Error, Success]] = {
     setStateProcessor(idProc, clientId, version, StopStateProcessorString) flatMap{
       case Right(_) =>
-        setStateProcessor(idProc, clientId, version, RunStateProcessorString)
+        setStateProcessor(idProc, clientId, version, RunStateProcessorString) flatMap{
+          case Right(success) => Future.successful(Right(success))
+          case Left(error) => error.code match {
+            case Some(409) =>
+              logger.debug("retry set run state the processor")
+              Thread.sleep(5000)
+              setStateProcessor(idProc, clientId, version, RunStateProcessorString)
+            case None      => Future.successful(Left(error))
+          }
+        }
       case Left(error) => Future.successful(Left(error))
     }
   }
