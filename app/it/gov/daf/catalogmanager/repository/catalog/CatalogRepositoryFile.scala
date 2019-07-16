@@ -194,7 +194,7 @@
       }
     }
 
-    def createCatalogExtOpenData(metaCatalog: MetaCatalog, callingUserid :MetadataCat, ws :WSClient) :Success = {
+    def createCatalogExtOpenData(metaCatalog: MetaCatalog, callingUserid :Option[String], ws :WSClient) :Success = {
       import catalog_manager.yaml.ResponseWrites.MetaCatalogWrites
 
       val fw = new FileWriter("data/data-mgt/data_test.json", true)
@@ -239,7 +239,7 @@
       Success(msg,Some(msg))
     }
 
-    def createCatalog(metaCatalog: MetaCatalog, callingUserid :MetadataCat, ws :WSClient): Either[Error, Success] = {
+    def createCatalog(metaCatalog: MetaCatalog, callingUserid :Option[String], ws :WSClient): Either[Error, Success] = {
       import catalog_manager.yaml.ResponseWrites.MetaCatalogWrites
 
       val fw = new FileWriter("data/data-mgt/data_test.json", true)

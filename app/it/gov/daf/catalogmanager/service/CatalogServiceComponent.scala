@@ -1,7 +1,7 @@
 package it.gov.daf.catalogmanager.service
 
 
-import catalog_manager.yaml.{Dataset, DatasetNameFields, Error, LinkedDataset, LinkedParams, MetaCatalog, MetadataCat, Success, DataSetFields}
+import catalog_manager.yaml.{Dataset, DatasetNameFields, Error, LinkedDataset, LinkedParams, MetaCatalog, Success, DataSetFields}
 import it.gov.daf.catalogmanager.repository.catalog.CatalogRepositoryComponent
 import play.api.libs.json.JsValue
 
@@ -39,12 +39,12 @@ trait CatalogServiceComponent {
       catalogRepository.publicCatalogByName(name)
     }
 
-    def createCatalog(metaCatalog: MetaCatalog, callingUserid :MetadataCat, ws :WSClient): Either[Error, Success] = {
+    def createCatalog(metaCatalog: MetaCatalog, callingUserid :Option[String], ws :WSClient): Either[Error, Success] = {
       println("Service : " +  callingUserid)
       catalogRepository.createCatalog(metaCatalog, callingUserid, ws)
     }
 
-    def createCatalogExtOpenData(metaCatalog: MetaCatalog, callingUserid :MetadataCat, ws :WSClient) :Success = {
+    def createCatalogExtOpenData(metaCatalog: MetaCatalog, callingUserid :Option[String], ws :WSClient) :Success = {
       println("Service : " +  callingUserid)
       catalogRepository.createCatalogExtOpenData(metaCatalog, callingUserid, ws)
     }

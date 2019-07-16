@@ -7,7 +7,7 @@ import play.api.libs.ws.WSClient
   * Created by ale on 10/05/17.
   */
 
-import catalog_manager.yaml.{Dataset, MetadataCat, Organization, ResourceSize}
+import catalog_manager.yaml.{Dataset, Organization}
 import play.api.libs.json.{JsResult, JsValue}
 
 import scala.concurrent.Future
@@ -17,24 +17,24 @@ import scala.concurrent.Future
   */
 trait CkanRepository {
 
-  def getMongoUser(name:String,callingUserid :MetadataCat): JsResult[User]
+  def getMongoUser(name:String,callingUserid :Option[String]): JsResult[User]
   def verifyCredentials(credentials: Credentials):Boolean
-  def updateOrganization(orgId: String, jsonOrg: JsValue,callingUserid :MetadataCat): Future[String]
-  def patchOrganization(orgId: String, jsonOrg: JsValue,callingUserid :MetadataCat): Future[String]
-  def createUser(jsonUser: JsValue,callingUserid :MetadataCat): Future[String]
-  def getUserOrganizations(userName :String,callingUserid :MetadataCat) : Future[JsResult[Seq[Organization]]]
-  def createDataset(jsonDataset: JsValue,callingUserid :MetadataCat): Future[String]
+  def updateOrganization(orgId: String, jsonOrg: JsValue,callingUserid :Option[String]): Future[String]
+  def patchOrganization(orgId: String, jsonOrg: JsValue,callingUserid :Option[String]): Future[String]
+  def createUser(jsonUser: JsValue,callingUserid :Option[String]): Future[String]
+  def getUserOrganizations(userName :String,callingUserid :Option[String]) : Future[JsResult[Seq[Organization]]]
+  def createDataset(jsonDataset: JsValue,callingUserid :Option[String]): Future[String]
   def createDatasetCkanGeo(catalog: Dataset, user: String, token: String, wsClient: WSClient): Future[Either[Error, Success]]
   def deleteDatasetCkanGeo(catalog: Dataset, user: String, token: String, wsClient: WSClient): Future[Either[Error, Success]]
-  def createOrganization(jsonDataset: JsValue,callingUserid :MetadataCat): Future[String]
-  def dataset(datasetId: String,callingUserid :MetadataCat): JsValue
-  def getOrganization(orgId :String,callingUserid :MetadataCat) : Future[JsResult[Organization]]
-  def getOrganizations(callingUserid :MetadataCat) : Future[JsValue]
-  def getDatasets(callingUserid :MetadataCat) : Future[JsValue]
-  def searchDatasets( input: (MetadataCat, MetadataCat, ResourceSize, ResourceSize), callingUserid :MetadataCat ) : Future[JsResult[Seq[Dataset]]]
-  def autocompleteDatasets( input: (MetadataCat, ResourceSize), callingUserid :MetadataCat) : Future[JsResult[Seq[AutocompRes]]]
-  def getDatasetsWithRes( input: (ResourceSize, ResourceSize), callingUserid :MetadataCat ) : Future[JsResult[Seq[Dataset]]]
-  def testDataset(datasetId :String, callingUserid :MetadataCat) : Future[JsResult[Dataset]]
+  def createOrganization(jsonDataset: JsValue,callingUserid :Option[String]): Future[String]
+  def dataset(datasetId: String,callingUserid :Option[String]): JsValue
+  def getOrganization(orgId :String,callingUserid :Option[String]) : Future[JsResult[Organization]]
+  def getOrganizations(callingUserid :Option[String]) : Future[JsValue]
+  def getDatasets(callingUserid :Option[String]) : Future[JsValue]
+  def searchDatasets( input: (Option[String], Option[String], Option[BigInt], Option[BigInt]), callingUserid :Option[String] ) : Future[JsResult[Seq[Dataset]]]
+  def autocompleteDatasets( input: (Option[String], Option[BigInt]), callingUserid :Option[String]) : Future[JsResult[Seq[AutocompRes]]]
+  def getDatasetsWithRes( input: (Option[BigInt], Option[BigInt]), callingUserid :Option[String] ) : Future[JsResult[Seq[Dataset]]]
+  def testDataset(datasetId :String, callingUserid :Option[String]) : Future[JsResult[Dataset]]
 
 }
 

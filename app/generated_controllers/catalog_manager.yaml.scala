@@ -49,7 +49,7 @@ import it.gov.daf.catalogmanager.nifi.Nifi
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-        
+                                                                
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -154,7 +154,7 @@ package catalog_manager.yaml {
             NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.autocompletedummy
         }
-        val searchdataset = searchdatasetAction { input: (MetadataCat, MetadataCat, ResourceSize, ResourceSize) =>
+        val searchdataset = searchdatasetAction { input: (SourceSftpUsername, SourceSftpUsername, ResourceSize, ResourceSize) =>
             val (q, sort, rows, start) = input
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.searchdataset
             RequestContext.execInContext[Future[SearchdatasetType[T] forSome { type T }]]("searchdataset") { () =>
@@ -420,7 +420,7 @@ package catalog_manager.yaml {
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.datasetcatalogbyname
         }
-        val autocompletedataset = autocompletedatasetAction { input: (MetadataCat, ResourceSize) =>
+        val autocompletedataset = autocompletedatasetAction { input: (SourceSftpUsername, ResourceSize) =>
             val (q, limit) = input
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.autocompletedataset
             RequestContext.execInContext[Future[AutocompletedatasetType[T] forSome { type T }]]("autocompletedataset") { () =>
@@ -764,7 +764,7 @@ package catalog_manager.yaml {
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.patchckanorganization
         }
-        val updateDcatapit = updateDcatapitAction { input: (Dataset, MetadataCat) =>
+        val updateDcatapit = updateDcatapitAction { input: (Dataset, SourceSftpUsername) =>
             val (catalog, lastSyncronized) = input
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.updateDcatapit
             RequestContext.execInContext[Future[UpdateDcatapitType[T] forSome { type T }]]("updateDcatapit") { () =>
@@ -930,9 +930,9 @@ package catalog_manager.yaml {
 
 
                     val ingest = feed.operational.input_src match {
-                        case InputSrc(Some(_), None, None, _) => "sftp"
-                        case InputSrc(None, Some(_), None, _) => "srv_pull"
-                        case InputSrc(None, None, Some(_), _) => "srv_push"
+                        case InputSrc(Some(_), None, None) => "sftp"
+                        case InputSrc(None, Some(_), None) => "srv_pull"
+                        case InputSrc(None, None, Some(_)) => "srv_push"
                     }
 
                     val user = CredentialManager.readCredentialFromRequest(currentRequest).username

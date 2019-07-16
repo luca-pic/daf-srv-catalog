@@ -110,11 +110,11 @@ class CatalogRepositoryDev extends CatalogRepository{
 
   }
 
-  def createCatalog(metaCatalog: MetaCatalog, callingUserid :MetadataCat, ws :WSClient): Either[Error, Success]= {
+  def createCatalog(metaCatalog: MetaCatalog, callingUserid :Option[String], ws :WSClient): Either[Error, Success]= {
     Right(Success("Created",None))
   }
 
-  def createCatalogExtOpenData(metaCatalog: MetaCatalog, callingUserid :MetadataCat, ws :WSClient) :Success = {
+  def createCatalogExtOpenData(metaCatalog: MetaCatalog, callingUserid :Option[String], ws :WSClient) :Success = {
     Success("Created",None)
   }
 
