@@ -1668,9 +1668,6 @@ definitions:
       operational:
          type: object
          $ref: '#/definitions/Operational'
-      #conversion:
-       # type: object
-        #$ref: '#/definitions/ConversionSchema'
       dcatapit:
         type: object
         $ref: '#/definitions/Dataset'
@@ -1736,10 +1733,6 @@ definitions:
           items:
             type: string
           description: Alises for dataset
-        #alliases:
-        #  type: array
-        #  items:
-        #    type: string
         separator:
           type: string
         property_hierarchy:
@@ -1752,13 +1745,11 @@ definitions:
     required:
       - name
       - type
-     # - metadata
     properties:
       name:
         type: string
         description: Name of the field
       type:
-       # $ref: '#/definitions/ActionAnyContent'
         type: string
         description: It can be a json object for complex type, or an array of string for primitive types (the latter may contains null in case the field can be nullable)
   FlatSchema:
@@ -1789,16 +1780,7 @@ definitions:
   Metadata:
     required:
     type: object
-    #  - metadata_format
-    #  - required
-    #  - constr
     properties:
-     # name_lang:
-     #   $ref: '#/definitions/Lang'
-     # metadata_format:
-     #   type: string
-#      type:
-#         type: string
       key:
         type: boolean
       title:
@@ -1814,20 +1796,12 @@ definitions:
         type: integer
         description: It specifies if the field must be valorized or can be null.
         format: int32
-#      uniq_dim:
-#        type: boolean
-#        description: checked if the column is part of the list of dimensions that make the row unique, such that there will not be two rows with the same values for the columns checked as uniq_dim.
       is_createdate:
         type: boolean
         description: checked if the column contains the date when the row was created.
       is_updatedate:
         type: boolean
         description: checked if the column contains the date when the row was updated.
-      #desc_lang:
-      #  $ref: '#/definitions/Lang'
-#      cat:
-#        type: string
-#        description: Main tag in the category list. This will be supported by an appropriate service managing categories.
       tag:
         type: array
         description: Main tag in the tag list. This will be supported by an appropriate service managing tag.
@@ -1837,11 +1811,6 @@ definitions:
         type: object
         description: info on semantics annotation
         $ref: '#/definitions/Semantic'
-#      constr:
-#        type: array
-#        description: (key value) to add constraints to the content of the column
-#        items:
-#          $ref: '#/definitions/Constr'
       personal:
         type: object
         description: tells if the column contains personal data, if so of what kind
@@ -1850,12 +1819,6 @@ definitions:
         type: object
         description: Add info about the specific format used for the column
         $ref: '#/definitions/FormatStd'
-#      field_profile:
-#        type: object
-#        description: it has info on indexing in SearchEngine and profiling of the field, plus other Kylo specific information on standard and validation.
-#        $ref: '#/definitions/FieldProfile'
-
-
   Lang:
     type: object
     properties:
@@ -1903,30 +1866,6 @@ definitions:
       field_group:
         type: string
         description: a unique ID linking together columns relating to the same aspect. In the future, this may be controlled or semi-controlled by the semantic context.
-#  Constr:
-#    type: object
-#    properties:
-#      type:
-#        type: string
-#      param:
-#        type: string
-#   # required:
-#   #   - rdfs:domain
-#   #   - rdfs:range
-#   # type: object
-#   # properties:
-#   #   rdfs:domain:
-#   #     type: string
-#   #     description: Uri of the Subject
-#   #   rdfs:range:
-#   #     type: string
-#   #     description: Uri of the Object
-#   #   owl:objectProperty:
-#   #     type: string
-#   #     description: Uri of the complex predicate
-#   #   owl:datatypeProp:
-#   #     type: string
-#   #     description: Uri of the simple predicate
   Personal:
     type: object
     properties:
@@ -1956,47 +1895,6 @@ definitions:
         description: It contains name and properties of
         items:
           $ref: '#/definitions/KeyValueArray'
-
-
-#  FieldProfile:
-#    type: object
-#    properties:
-#      is_index:
-#        type: boolean
-#        description: it tells to create an index based on this field in the SearchEngine.
-#      is_profile:
-#        type: boolean
-#        description: it tells to create a profile for the field that will be displayed as result of the SearchEngine.
-#      validation:
-#        type: array
-#        description: contains info on the validation rules to be used for the field.
-#        items:
-#          type: string
-#      standardization:
-#        type: array
-#        description: contains info on the standardization procedure to be performed on the field (Kylo Standardization).
-#        items:
-#          type: string
-#      entity_extr:
-#        type: array
-#        description: contains the list of entity extraction procedures to be applied to the field.
-#        items:
-#          $ref: '#/definitions/EntityExtraction'
-
-#  EntityExtraction:
-#    type: object
-#    required:
-#      - name
-#    properties:
-#      name:
-#        type: string
-#        description: Name of the entity extraction mechanism.
-#      param:
-#        type: array
-#        description: Key/Value pairs list of Name/Value parameters of the selected entity extraction procedure.
-#        items:
-#          $ref: '#/definitions/KeyValue'
-
   Operational:
     required:
       - is_std
@@ -2007,9 +1905,6 @@ definitions:
       - theme
       - subtheme
     properties:
-      #id:
-      #  type: integer
-      #  format: int32
       state:
         type: string
         description: Dataset is active or not
@@ -2034,11 +1929,6 @@ definitions:
       group_own:
         type: string
         description: Group of ownership to which the dataset belongs. It is set to the same group to which the user belongs to by default.
-#      group_access:
-#        type: array
-#        description: Groups that have rights to access the datasets. It contains the name and the role associated to the group
-#        items:
-#          $ref: '#/definitions/GroupAccess'
       std_schema:
         type: object
         description:
@@ -2046,22 +1936,9 @@ definitions:
       read_type:
         description: It tells whether the dataset is an append of snapshot ('last_update') or a time series ('time_series') and tells the program how to return the data.
         type: string
-#      georef:
-#        type: array
-#        items:
-#          $ref: '#/definitions/GeoRef'
       input_src:
         description: Input sources for data to be ingested into the dataset.
         $ref: '#/definitions/InputSrc'
-#      ingestion_pipeline:
-#        type: array
-#        description: List of ingestion pipeline to be applied, in order of declaration, to the data to be ingested.
-#        items:
-#          $ref: '#/definitions/IngestionPipeline'
-#      storage_info:
-#        description: Information on the storage to be used to save the dataset.
-#        type: object
-#        $ref: '#/definitions/StorageInfo'
       dataset_type:
         type: string
         description: --DEPRECATED, use dataset_proc.dataset_type instead-- It tells whether the dataset is at rest ('batch') or realtime stream ('stream') and, orthogonally, if it is of type 'opendata' (from  national catalogue), in which case it will have a suffix '_opendata'.
@@ -2106,16 +1983,6 @@ definitions:
         type: string
       query_json:
         type: string
-#  IngestionPipeline:
-#    type: object
-#    description: Object describing the properties of an ingestion pipeline
-#    properties:
-#      name:
-#        type: string
-#        description: name of the ingestion pipe
-#      param:
-#        type: string
-#        description: parameters for the ingestion pipe in JSON format.
   ExtOpenData:
     type: object
     description: Type associated with group_access
@@ -2149,17 +2016,6 @@ definitions:
         type: string
       permission:
         type: string
-#  GroupAccess:
-#    type: object
-#    description: Type associated with group_access
-#    required:
-#      - name
-#      - role
-#    properties:
-#      name:
-#        type: string
-#      role:
-#        type: string
   InputSrc:
     type: object
     properties:
@@ -2176,10 +2032,6 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/SourceSrvPush'
-#      daf_dataset:
-#        type: array
-#        items:
-#          $ref: '#/definitions/SourceDafDataset'
   SourceSftp:
     type: object
     description: Info for the ingestion source of type SFTP
@@ -2251,129 +2103,6 @@ definitions:
       param:
         type: string
         description: Other parameters to be passed in JSON format. It will be None by default.
-#  SourceDafDataset:
-#    type: object
-#    description: It contains info to build the dataset based on already existing dataset in DAF.
-#    required:
-#      - dataset_uri.s
-#    properties:
-#      dataset_uri:
-#        type: array
-#        items:
-#          type: string
-#        description: List of uri of datasets to be used for the derived dataset.
-#      sql:
-#        type: string
-#        description: Sql statement to create the derived dataset based on the ones indicated in 'dataset_uri'.
-#      procedure:
-#        type: string
-#        description: id of the procedure to be applied to build and update the dataset
-#      param:
-#        type: string
-#        description: Other parameters to be passed in JSON format. It will be None by default.
-#  StorageInfo:
-#    type: object
-#    properties:
-#      hdfs:
-#        type: object
-#        description: StorageHdfs object that contains info for the HDFS storage.
-#        $ref: '#/definitions/StorageHdfs'
-#      kudu:
-#        type: object
-#        description: StorageKudu objects info for the Kudu storage.
-#        $ref: '#/definitions/StorageKudu'
-#      hbase:
-#        type: object
-#        description: StorageHbase objects info for the Hbase storage.
-#        $ref: '#/definitions/StorageHbase'
-#      textdb:
-#        type: object
-#        description: SourceTextdb
-#        $ref: '#/definitions/StorageTextdb'
-#      mongo:
-#        type: object
-#        description: MongoDB storage
-#        $ref: '#/definitions/StorageMongo'
-#  StorageHdfs:
-#    type: object
-#    description: If compiled, will tell the ingestion manager to store the data into HDFS.
-#    required:
-#      - name
-#    properties:
-#      name:
-#        type: string
-#        description: It is the name of the HDFS storage configuration to use. It is 'hdfs_daf' by default, with which will follow the DAF path convention.
-#      path:
-#        type: string
-#        description: It is the hdfs path where data will be stored. It is None if the default 'hdfs_daf' is used.
-#      param:
-#        type: string
-#        description: Other parameters to be passed in JSON format. It will be None by default.
-#  StorageKudu:
-#    type: object
-#    description: If compiled, will tell the ingestion manager to store the data into Kudu.
-#    required:
-#      - name
-#    properties:
-#      name:
-#        type: string
-#        description: It is the name of the Kudu storage configuration to use. It is 'kudu_daf' by default, with which will follow the DAF convention.
-#      table_name:
-#        type: string
-#        description: it is the name of the table where data are stored.
-#      param:
-#        type: string
-#        description: Other parameters to be passed in JSON format. It will be None by default.
-#  StorageHbase:
-#    type: object
-#    description: If compiled, will tell the ingestion manager to store the data into Hbase.
-#    required:
-#      - name
-#    properties:
-#      name:
-#        type: string
-#        description: It is the name of the Kudu storage configuration to use. It is 'hbase_daf' by default, with which will follow the DAF convention.
-#      metric:
-#        type: string
-#        description: It is the name of the metric we want to store i.e. speed, cpu temperature and so on.
-#      tags:
-#        description: it a list containing any metadata about the value (e.g. host, region, server, street_name)
-#        type: array
-#        items:
-#          type: string
-#      param:
-#        type: string
-#        description: Other parameters to be passed in JSON format. It will be None by default.
-#  StorageTextdb:
-#    type: object
-#    description: If compiled, will tell the ingestion manager to store the data into Textdb.
-#    required:
-#      - name
-#    properties:
-#      name:
-#        type: string
-#        description: It is the name of the Textdb storage configuration to use. It is 'textdb_daf' by default, with which will follow the DAF convention.
-#      path:
-#        type: string
-#        description: It is the Kudu path where data will be stored. It is None if the default 'textdb_daf' is used.
-#      param:
-#        type: string
-#        description: Other parameters to be passed in JSON format. It will be None by default.
-#  StorageMongo:
-#    type: object
-#    description: If compiled, will tell the ingestion manager to store the data into Kudu.
-#    required:
-#      - name
-#    properties:
-#      name:
-#        type: string
-#        description: It is the name of the MongoDB storage configuration to use. It is 'mongo_daf' by default, with which will follow the DAF convention.
-#      path:
-#        type: string
-#        description: It is the MongoDB path where data will be stored. It is None if the default 'mongo_daf' is used.
-#      param:
-#        type: string
-#        description: Other parameters to be passed in JSON format. It will be None by default.
   Partitions:
     type: object
     description: it contains info about how the dataset has been partitioned, if applicable.
@@ -2396,16 +2125,12 @@ definitions:
     description: It contains procedural info that helps to manage the ingestion and egestion of the dataset.
     required:
       - dataset_type
-#      - read_type
       - merge_strategy
       - cron
     properties:
       dataset_type:
         type: string
         description: It tells whether the dataset is at rest ('batch') or realtime stream ('stream') and, orthogonally, if it is of type 'opendata' (from  national catalogue), in      which case it will have a suffix '_opendata'.. It should be an enum, to be changed when we upgrade to OpenApi 3.
-#      read_type:
-#        type: string
-#        description: It tells whether the dataset is an append of snapshot ('last_update') or a time series ('time_series') and tells the program how to return the data. It should be an enum, to be changed when we upgrade to OpenApi 3.
       partitions:
         type: array
         description: Info on how dataset are partitioned into HDFS.
@@ -2419,19 +2144,6 @@ definitions:
         description:  It tells the shedule frequency of feed to start
       scheduling_strategy:
         type: string
-
-#  GeoRef:
-#    type: object
-#    required:
-#      - lat
-#      - lon
-#    properties:
-#      lat:
-#        type: number
-#        format: double
-#      lon:
-#        type: number
-#        format: double
   StdSchema:
     type: object
     required:
@@ -2541,10 +2253,6 @@ definitions:
         #type: string
       #geographical_name:
         #type: string
-#      groups:
-#        type: array
-#        items:
-#          $ref: '#/definitions/Group'
       holder_identifier:
         type: string
       holder_name:
@@ -2582,8 +2290,6 @@ definitions:
         #type: integer
       #num_tags:
         #type: integer
-#      organization:
-#        $ref: '#/definitions/Organization'
       owner_org:
         type: string
       privatex:
@@ -2596,10 +2302,6 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/Relationship'
-#      relationships_as_subject:
-#        type: array
-#        items:
-#          $ref: '#/definitions/Relationship'
       resources:
         type: array
         items:
@@ -2610,10 +2312,6 @@ definitions:
        # type: string
       #state:
         #type: string
-#      tags:
-#        type: array
-#        items:
-#          $ref: '#/definitions/Tag'
       #temporal_end:
         #type: string
       #temporal_start:
@@ -2628,21 +2326,6 @@ definitions:
         #type: string
       #version:
         #type: string
-#  Group:
-#    type: object
-#    properties:
-#      display_name:
-#        type: string
-#      description:
-#        type: string
-#      image_display_url:
-#        type: string
-#      title:
-#        type: string
-#      id:
-#        type: string
-#      name:
-#        type: string
   Organization:
     type: object
     required:
@@ -2736,19 +2419,6 @@ definitions:
         #type: string
       #webstore_url:
         #type: string
-#  Tag:
-#    type: object
-#    properties:
-#      display_name:
-#        type: string
-#      id:
-#        type: string
-#      name:
-#        type: string
-#      state:
-#        type: string
-#      vocabulary_id:
-#        type: string
   Extra:
     type: object
     properties:
