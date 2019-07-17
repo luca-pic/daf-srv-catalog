@@ -49,7 +49,7 @@ import it.gov.daf.catalogmanager.nifi.Nifi
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-                
+    
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -153,7 +153,7 @@ package catalog_manager.yaml {
             NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.autocompletedummy
         }
-        val searchdataset = searchdatasetAction { input: (MetadataCat, MetadataCat, ResourceSize, ResourceSize) =>
+        val searchdataset = searchdatasetAction { input: (SourceSftpUsername, SourceSftpUsername, ResourceSize, ResourceSize) =>
             val (q, sort, rows, start) = input
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.searchdataset
             RequestContext.execInContext[Future[SearchdatasetType[T] forSome { type T }]]("searchdataset") { () =>
@@ -340,7 +340,18 @@ package catalog_manager.yaml {
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.voc_dcat2dafsubtheme
         }
-        val addQueueCatalog = addQueueCatalogAction { (catalog: StringToKafka) =>  
+        val getByNameOpenData = getByNameOpenDataAction { (dataSetFields: DataSetFields) =>
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.getByNameOpenData
+            RequestContext.execInContext[Future[GetByNameOpenDataType[T] forSome { type T }]]("getByNameOpenData") { () =>
+                val result = ServiceRegistry.catalogRepository.getByNameOpenData(dataSetFields)
+                result match {
+                    case Some(metacatalog) => GetByNameOpenData200(metacatalog)
+                    case _ => GetByNameOpenData404(Error(s"dataset not found -> (${dataSetFields.organization}, ${dataSetFields.dataSetName}, ${dataSetFields.resourceName})",None,None))
+                }
+            }
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.getByNameOpenData
+        }
+        val addQueueCatalog = addQueueCatalogAction { (catalog: StringToKafka) =>
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.addQueueCatalog
             RequestContext.execInContext[Future[AddQueueCatalogType[T] forSome { type T }]]("addQueueCatalog") { () =>
               logger.debug(s"catalog: ${catalog.catalog}")
@@ -408,7 +419,7 @@ package catalog_manager.yaml {
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.datasetcatalogbyname
         }
-        val autocompletedataset = autocompletedatasetAction { input: (MetadataCat, ResourceSize) =>
+        val autocompletedataset = autocompletedatasetAction { input: (SourceSftpUsername, ResourceSize) =>
             val (q, limit) = input
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.autocompletedataset
             RequestContext.execInContext[Future[AutocompletedatasetType[T] forSome { type T }]]("autocompletedataset") { () =>
@@ -500,7 +511,18 @@ package catalog_manager.yaml {
             NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.test
         }
-        val verifycredentials = verifycredentialsAction { (credentials: Credentials) =>  
+        val isPresentOpenData = isPresentOpenDataAction { (dataSetFields: DataSetFields) =>
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.isPresentOpenData
+            RequestContext.execInContext[Future[IsPresentOpenDataType[T] forSome { type T }]]("isPresentOpenData") { () =>
+                val result = ServiceRegistry.catalogRepository.isPresentOpenData(dataSetFields)
+                result.flatMap {
+                    case Right(dataset) => IsPresentOpenData200(dataset)
+                    case Left(l) => IsPresentOpenData404(l)
+                }
+            }
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.isPresentOpenData
+        }
+        val verifycredentials = verifycredentialsAction { (credentials: Credentials) =>
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.verifycredentials
             RequestContext.execInContext[Future[VerifycredentialsType[T] forSome { type T }]]("verifycredentials") { () =>
                 CkanRegistry.ckanService.verifyCredentials(credentials) match {
@@ -526,7 +548,7 @@ package catalog_manager.yaml {
                     }
                 }else DeleteCatalogCkanGeo401(Error(s"Unauthorized to delete dataset for organization $datasetOrg", None, None))
             }
-//            NotImplementedYet
+            //            NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.deleteCatalogCkanGeo
         }
         val voc_dcatthemegetall = voc_dcatthemegetallAction {  _ =>  
@@ -589,7 +611,20 @@ package catalog_manager.yaml {
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.getckanuserorganizationList
         }
-        val voc_themesgetall = voc_themesgetallAction {  _ =>  
+        val setOperationalStateInactive = setOperationalStateInactiveAction { (datasetName: String) =>
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.setOperationalStateInactive
+            RequestContext.execInContext[Future[SetOperationalStateInactiveType[T] forSome { type T }]]("setOperationalStateInactive") { () =>
+                val credentialAuthor = CredentialManager.readCredentialFromRequest(currentRequest).username
+                val isDafSysAdmin = CredentialManager.isDafSysAdmin(currentRequest)
+                val result = ServiceRegistry.catalogRepository.setOperationalStateInactive(datasetName,isDafSysAdmin,credentialAuthor)
+                result.flatMap {
+                    case Right(r) => SetOperationalStateInactive200(r)
+                    case Left(l) => SetOperationalStateInactive404(l)
+                }
+            }
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.setOperationalStateInactive
+        }
+        val voc_themesgetall = voc_themesgetallAction {  _ =>
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.voc_themesgetall
             RequestContext.execInContext[Future[Voc_themesgetallType[T] forSome { type T }]]("voc_themesgetall") { () =>
                 val themeList: Seq[KeyValue] = VocServiceRegistry.vocRepository.listThemeAll()
@@ -618,16 +653,16 @@ package catalog_manager.yaml {
             val (name, limit, linkedParams) = input
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.getLinkedDataset
             RequestContext.execInContext[Future[GetLinkedDatasetType[T] forSome { type T }]]("getLinkedDataset") { () =>
-              val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
-               GetLinkedDataset200(ServiceRegistry.catalogService.getLinkedDatasets(name, linkedParams, credentials.username, credentials.groups.toList, limit))
+                val credentials = CredentialManager.readCredentialFromRequest(currentRequest)
+                GetLinkedDataset200(ServiceRegistry.catalogService.getLinkedDatasets(name, linkedParams, credentials.username, credentials.groups.toList, limit))
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.getLinkedDataset
         }
         val getFieldsVoc = getFieldsVocAction {  _ =>  
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.getFieldsVoc
             RequestContext.execInContext[Future[GetFieldsVocType[T] forSome { type T }]]("getFieldsVoc") { () =>
-            GetFieldsVoc200(ServiceRegistry.catalogService.getFieldsVoc)
-          }
+                GetFieldsVoc200(ServiceRegistry.catalogService.getFieldsVoc)
+            }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.getFieldsVoc
         }
         val createckanorganization = createckanorganizationAction { (organization: Organization) =>  
@@ -728,7 +763,29 @@ package catalog_manager.yaml {
             }
             // ----- End of unmanaged code area for action  Catalog_managerYaml.patchckanorganization
         }
-        val datasetcatalogbyid = datasetcatalogbyidAction { (catalog_id: String) =>  
+        val updateDcatapit = updateDcatapitAction { input: (Dataset, SourceSftpUsername) =>
+            val (catalog, lastSyncronized) = input
+            // ----- Start of unmanaged code area for action  Catalog_managerYaml.updateDcatapit
+            RequestContext.execInContext[Future[UpdateDcatapitType[T] forSome { type T }]]("updateDcatapit") { () =>
+              def parseError(error: Error) ={
+                  error.code match{
+                      case Some(400) => UpdateDcatapit400(error)
+                      case Some(401) => UpdateDcatapit401(error)
+                      case Some(404) => UpdateDcatapit404(error)
+                      case _ => UpdateDcatapit500(error)
+                  }
+              }
+                val credentialAuthor = CredentialManager.readCredentialFromRequest(currentRequest).username
+                val isDafSysAdmin = CredentialManager.isDafSysAdmin(currentRequest)
+                val result = ServiceRegistry.catalogRepository.updateDcatapit(catalog,isDafSysAdmin,credentialAuthor,lastSyncronized)
+                result.flatMap {
+                    case Right(r) => UpdateDcatapit200(r)
+                    case Left(l) => parseError(l)
+                }
+            }
+            // ----- End of unmanaged code area for action  Catalog_managerYaml.updateDcatapit
+        }
+        val datasetcatalogbyid = datasetcatalogbyidAction { (catalog_id: String) =>
             // ----- Start of unmanaged code area for action  Catalog_managerYaml.datasetcatalogbyid
             RequestContext.execInContext[Future[DatasetcatalogbyidType[T] forSome { type T }]]("datasetcatalogbyid") { () =>
                 val logical_uri = new java.net.URI(catalog_id)
@@ -749,7 +806,7 @@ package catalog_manager.yaml {
                     case None => Datasetcatalogbyid401("Error")
                 }
             }
-             //NotImplementedYet
+            //NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.datasetcatalogbyid
         }
         val voc_daf2dcattheme = voc_daf2dcatthemeAction { (themeid: String) =>  
@@ -772,7 +829,7 @@ package catalog_manager.yaml {
                     }
                 }else AddCatalogCkanGeo401(Error(s"Unauthorized to insert dataset for organization $datasetOrg", None, None))
             }
-//            NotImplementedYet
+            //            NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.addCatalogCkanGeo
         }
         val voc_dcatsubthemesgetbyid = voc_dcatsubthemesgetbyidAction { (themeid: String) =>  
@@ -872,9 +929,9 @@ package catalog_manager.yaml {
 
 
                     val ingest = feed.operational.input_src match {
-                        case InputSrc(Some(_), None, None, _) => "sftp"
-                        case InputSrc(None, Some(_), None, _) => "srv_pull"
-                        case InputSrc(None, None, Some(_), _) => "srv_push"
+                        case InputSrc(Some(_), None, None) => "sftp"
+                        case InputSrc(None, Some(_), None) => "srv_pull"
+                        case InputSrc(None, None, Some(_)) => "srv_push"
                     }
 
                     val user = CredentialManager.readCredentialFromRequest(currentRequest).username
@@ -954,25 +1011,25 @@ package catalog_manager.yaml {
                     result
                 }
             }
-           // NotImplementedYet
+            // NotImplementedYet
             // ----- End of unmanaged code area for action  Catalog_managerYaml.startKyloFedd
         }
     
      // Dead code for absent methodCatalog_managerYaml.datasetcatalogs
      /*
-            // ----- Start of unmanaged code area for action  Catalog_managerYaml.datasetcatalogs
-            RequestContext.execInContext[Future[DatasetcatalogsType[T] forSome { type T }]]("datasetcatalogs") { () =>
-                val pageIng :Option[Int] = page
-                val limitIng :Option[Int] = limit
-                val catalogs = ServiceRegistry.catalogService.listCatalogs(page,limit)
+               // ----- Start of unmanaged code area for action  Catalog_managerYaml.datasetcatalogs
+               RequestContext.execInContext[Future[DatasetcatalogsType[T] forSome { type T }]]("datasetcatalogs") { () =>
+                   val pageIng :Option[Int] = page
+                   val limitIng :Option[Int] = limit
+                   val catalogs = ServiceRegistry.catalogService.listCatalogs(page,limit)
 
-                catalogs match {
-                    case Seq() => Datasetcatalogs401("No data")
-                    case _ => Datasetcatalogs200(catalogs)
-                }
-            }
-            // Datasetcatalogs200(catalogs)
-            // ----- End of unmanaged code area for action  Catalog_managerYaml.datasetcatalogs
+                   catalogs match {
+                       case Seq() => Datasetcatalogs401("No data")
+                       case _ => Datasetcatalogs200(catalogs)
+                   }
+               }
+               // Datasetcatalogs200(catalogs)
+               // ----- End of unmanaged code area for action  Catalog_managerYaml.datasetcatalogs
      */
 
     

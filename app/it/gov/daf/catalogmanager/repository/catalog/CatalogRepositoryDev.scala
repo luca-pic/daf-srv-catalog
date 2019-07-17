@@ -110,11 +110,11 @@ class CatalogRepositoryDev extends CatalogRepository{
 
   }
 
-  def createCatalog(metaCatalog: MetaCatalog, callingUserid :MetadataCat, ws :WSClient): Either[Error, Success]= {
+  def createCatalog(metaCatalog: MetaCatalog, callingUserid :Option[String], ws :WSClient): Either[Error, Success]= {
     Right(Success("Created",None))
   }
 
-  def createCatalogExtOpenData(metaCatalog: MetaCatalog, callingUserid :MetadataCat, ws :WSClient) :Success = {
+  def createCatalogExtOpenData(metaCatalog: MetaCatalog, callingUserid :Option[String], ws :WSClient) :Success = {
     Success("Created",None)
   }
 
@@ -140,4 +140,16 @@ class CatalogRepositoryDev extends CatalogRepository{
 
   def getLinkedDatasets(datasetName: String, linkedParams: LinkedParams, user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]] =
     Future.successful(Seq[LinkedDataset]())
+
+  def getByNameOpenData(dataSetFields: DataSetFields): Option[MetaCatalog] = {
+    None
+  }
+  def isPresentOpenData(dataSetFields: DataSetFields): Future[Either[Error, Success]] = {
+    Future.successful(Right(Success("Is present",None)))
+  }
+  def setOperationalStateInactive(datasetName: String, isDafSysAdmin: Boolean, credentialAuthor: String): Future[Either[Error, Success]] =
+    Future.successful(Right(Success("Update state to inactive",None)))
+
+  def updateDcatapit(catalog: Dataset, isDafSysAdmin: Boolean, credentialAuthor: String, lastSyncronized: Option[String]): Future[Either[Error, Success]] =
+    Future.successful(Right(Success("update Dcatapit",None)))
 }

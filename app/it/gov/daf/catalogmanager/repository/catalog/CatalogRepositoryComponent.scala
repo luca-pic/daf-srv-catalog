@@ -18,8 +18,8 @@ trait CatalogRepository {
     def catalogByName(name :String, user: String, groups: List[String]): Option[MetaCatalog]
     def internalCatalogByName(name: String, user: String, org: String, isSysAdmin: Boolean, token: String, ws: WSClient): Future[Either[Error, MetaCatalog]]
     def publicCatalogByName(name: String):Option[MetaCatalog]
-    def createCatalog(metaCatalog: MetaCatalog,callingUserid :MetadataCat, ws :WSClient): Either[Error, Success]
-    def createCatalogExtOpenData(metaCatalog: MetaCatalog,callingUserid :MetadataCat, ws :WSClient) :Success
+    def createCatalog(metaCatalog: MetaCatalog,callingUserid :Option[String], ws :WSClient): Either[Error, Success]
+    def createCatalogExtOpenData(metaCatalog: MetaCatalog,callingUserid :Option[String], ws :WSClient) :Success
     def standardUris() : List[String]
     def isDatasetOnCatalog(name :String): Option[Boolean]
     def deleteCatalogByName(nameCatalog: String, user: String, org: String, isSysAdmin: Boolean, token: String, wsClient: WSClient): Future[Either[Error, Success]]
@@ -27,6 +27,10 @@ trait CatalogRepository {
     def getTag: Future[Seq[String]]
     def getFieldsVoc: Future[Seq[DatasetNameFields]]
     def getLinkedDatasets(datasetName: String, linkedParams: LinkedParams, user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]]
+    def isPresentOpenData(dataSetFields: DataSetFields): Future[Either[Error, Success]]
+    def getByNameOpenData(dataSetFields: DataSetFields): Option[MetaCatalog]
+    def setOperationalStateInactive(datasetName: String, isDafSysAdmin: Boolean, credentialAuthor: String): Future[Either[Error, Success]]
+    def updateDcatapit(catalog: Dataset, isDafSysAdmin: Boolean, credentialAuthor: String, lastSyncronized: Option[String]): Future[Either[Error, Success]]
 
 
     // DO NOT DELETE

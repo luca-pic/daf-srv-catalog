@@ -2,7 +2,7 @@ package it.gov.daf.catalogmanager.repository.ckan
 
 import java.io.{FileInputStream, PrintWriter}
 
-import catalog_manager.yaml.{AutocompRes, Credentials, Dataset, Error, MetadataCat, Organization, ResourceSize, Success, User}
+import catalog_manager.yaml.{AutocompRes, Credentials, Dataset, Error, Organization, Success, User}
 import play.Environment
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
@@ -30,7 +30,7 @@ class CkanRepositoryDev extends CkanRepository{
 
   private val datasetWriter = new PrintWriter(Environment.simple().getFile("data/Dataset.json"))
 
-  def createDataset( jsonDataset: JsValue, callingUserid :MetadataCat ): Future[String] = try {
+  def createDataset( jsonDataset: JsValue, callingUserid :Option[String] ): Future[String] = try {
     datasetWriter.println(jsonDataset.toString)
     Future("ok")
   } finally {
@@ -45,7 +45,7 @@ class CkanRepositoryDev extends CkanRepository{
     Future.successful(Right(Success("success", None)))
   }
 
-  def getMongoUser(name:String,callingUserid :MetadataCat): JsResult[User]={
+  def getMongoUser(name:String,callingUserid :Option[String]): JsResult[User]={
     JsSuccess(null)
   }
 
@@ -53,56 +53,56 @@ class CkanRepositoryDev extends CkanRepository{
     true
   }
 
-  def updateOrganization(orgId: String, jsonOrg: JsValue, callingUserid :MetadataCat): Future[String] = {
+  def updateOrganization(orgId: String, jsonOrg: JsValue, callingUserid :Option[String]): Future[String] = {
     Future("todo")
   }
 
-  def patchOrganization(orgId: String, jsonOrg: JsValue, callingUserid :MetadataCat): Future[String] = {
+  def patchOrganization(orgId: String, jsonOrg: JsValue, callingUserid :Option[String]): Future[String] = {
     Future("todo")
   }
 
-  def createOrganization( jsonDataset: JsValue, callingUserid :MetadataCat ) : Future[String] = {
+  def createOrganization( jsonDataset: JsValue, callingUserid :Option[String] ) : Future[String] = {
     Future("todo")
   }
 
-  def createUser(jsonUser: JsValue, callingUserid :MetadataCat): Future[String]= {
+  def createUser(jsonUser: JsValue, callingUserid :Option[String]): Future[String]= {
     Future("todo")
   }
 
-  def getUserOrganizations(userName :String, callingUserid :MetadataCat) : Future[JsResult[Seq[Organization]]] = {
+  def getUserOrganizations(userName :String, callingUserid :Option[String]) : Future[JsResult[Seq[Organization]]] = {
     Future(null)
   }
 
 
-  def dataset(datasetId: String, callingUserid :MetadataCat): JsValue = {
+  def dataset(datasetId: String, callingUserid :Option[String]): JsValue = {
     readDataset()
   }
 
-  def getOrganization(orgId :String, callingUserid :MetadataCat) : Future[JsResult[Organization]] = {
+  def getOrganization(orgId :String, callingUserid :Option[String]) : Future[JsResult[Organization]] = {
     Future(null)
   }
 
-  def getOrganizations(callingUserid :MetadataCat) : Future[JsValue] = {
+  def getOrganizations(callingUserid :Option[String]) : Future[JsValue] = {
     Future(null)
   }
 
-  def getDatasets(callingUserid :MetadataCat) : Future[JsValue] = {
+  def getDatasets(callingUserid :Option[String]) : Future[JsValue] = {
     Future(null)
   }
 
-  def searchDatasets( input: (MetadataCat, MetadataCat, ResourceSize, ResourceSize), callingUserid :MetadataCat ) : Future[JsResult[Seq[Dataset]]]={
+  def searchDatasets( input: (Option[String], Option[String], Option[BigInt], Option[BigInt]), callingUserid :Option[String] ) : Future[JsResult[Seq[Dataset]]]={
     Future(null)
   }
 
-  def autocompleteDatasets( input: (MetadataCat, ResourceSize), callingUserid :MetadataCat) : Future[JsResult[Seq[AutocompRes]]] = {
+  def autocompleteDatasets( input: (Option[String], Option[BigInt]), callingUserid :Option[String]) : Future[JsResult[Seq[AutocompRes]]] = {
     Future(null)
   }
 
-  def getDatasetsWithRes( input: (ResourceSize, ResourceSize), callingUserid :MetadataCat ) : Future[JsResult[Seq[Dataset]]] = {
+  def getDatasetsWithRes( input: (Option[BigInt], Option[BigInt]), callingUserid :Option[String] ) : Future[JsResult[Seq[Dataset]]] = {
     Future(null)
   }
 
-  def testDataset(datasetId :String, callingUserid :MetadataCat) : Future[JsResult[Dataset]] = {
+  def testDataset(datasetId :String, callingUserid :Option[String]) : Future[JsResult[Dataset]] = {
     Future(null)
     /*
     Future(JsSuccess(Dataset(None,None,None,None,None,

@@ -1,7 +1,7 @@
 package it.gov.daf.catalogmanager.service
 
 
-import catalog_manager.yaml.{Dataset, DatasetNameFields, Error, LinkedDataset, LinkedParams, MetaCatalog, MetadataCat, Success}
+import catalog_manager.yaml.{Dataset, DatasetNameFields, Error, LinkedDataset, LinkedParams, MetaCatalog, Success, DataSetFields}
 import it.gov.daf.catalogmanager.repository.catalog.CatalogRepositoryComponent
 import play.api.libs.json.JsValue
 
@@ -39,15 +39,29 @@ trait CatalogServiceComponent {
       catalogRepository.publicCatalogByName(name)
     }
 
-    def createCatalog(metaCatalog: MetaCatalog, callingUserid :MetadataCat, ws :WSClient): Either[Error, Success] = {
+    def createCatalog(metaCatalog: MetaCatalog, callingUserid :Option[String], ws :WSClient): Either[Error, Success] = {
       println("Service : " +  callingUserid)
       catalogRepository.createCatalog(metaCatalog, callingUserid, ws)
     }
 
-    def createCatalogExtOpenData(metaCatalog: MetaCatalog, callingUserid :MetadataCat, ws :WSClient) :Success = {
+    def createCatalogExtOpenData(metaCatalog: MetaCatalog, callingUserid :Option[String], ws :WSClient) :Success = {
       println("Service : " +  callingUserid)
       catalogRepository.createCatalogExtOpenData(metaCatalog, callingUserid, ws)
     }
+
+    def isPresentOpenData(dataSetFields: DataSetFields): Future[Either[Error, Success]] = {
+      catalogRepository.isPresentOpenData(dataSetFields)
+    }
+
+    def getByNameOpenData(dataSetFields: DataSetFields): Option[MetaCatalog] = {
+      catalogRepository.getByNameOpenData(dataSetFields)
+    }
+
+    def setOperationalStateInactive(datasetName: String, isDafSysAdmin: Boolean, credentialAuthor: String): Future[Either[Error, Success]] =
+      catalogRepository.setOperationalStateInactive(datasetName, isDafSysAdmin, credentialAuthor)
+
+    def updateDcatapit(catalog: Dataset, isDafSysAdmin: Boolean, credentialAuthor: String, lastSyncronized: Option[String]): Future[Either[Error, Success]] =
+      catalogRepository.updateDcatapit(catalog, isDafSysAdmin, credentialAuthor, lastSyncronized)
 
     def isPresentOnCatalog(name :String) :Option[Boolean] = {
       catalogRepository.isDatasetOnCatalog(name)

@@ -194,7 +194,7 @@
       }
     }
 
-    def createCatalogExtOpenData(metaCatalog: MetaCatalog, callingUserid :MetadataCat, ws :WSClient) :Success = {
+    def createCatalogExtOpenData(metaCatalog: MetaCatalog, callingUserid :Option[String], ws :WSClient) :Success = {
       import catalog_manager.yaml.ResponseWrites.MetaCatalogWrites
 
       val fw = new FileWriter("data/data-mgt/data_test.json", true)
@@ -239,7 +239,7 @@
       Success(msg,Some(msg))
     }
 
-    def createCatalog(metaCatalog: MetaCatalog, callingUserid :MetadataCat, ws :WSClient): Either[Error, Success] = {
+    def createCatalog(metaCatalog: MetaCatalog, callingUserid :Option[String], ws :WSClient): Either[Error, Success] = {
       import catalog_manager.yaml.ResponseWrites.MetaCatalogWrites
 
       val fw = new FileWriter("data/data-mgt/data_test.json", true)
@@ -285,6 +285,9 @@
       else Right(Success(msg,Some(msg)))
     }
 
+    def getByNameOpenData(dataSetFields: DataSetFields): Option[MetaCatalog] = {
+      None
+    }
     // Not used
      def standardUris(): List[String] = List("ale", "raf")
 
@@ -308,4 +311,14 @@
 
     def getLinkedDatasets(datasetName: String, linkedParams: LinkedParams, user: String, groups: List[String], limit: Option[Int]): Future[Seq[LinkedDataset]] =
       Future.successful(Seq[LinkedDataset]())
+
+    def isPresentOpenData(dataSetFields: DataSetFields) = {
+      Future.successful(Right(Success("is present", None)))
+    }
+
+    def setOperationalStateInactive(datasetName: String, isDafSysAdmin: Boolean, credentialAuthor: String): Future[Either[Error, Success]] =
+      Future.successful(Right(Success("state = inactive", None)))
+
+    def updateDcatapit(catalog: Dataset, isDafSysAdmin: Boolean, credentialAuthor: String, lastSyncronized: Option[String]): Future[Either[Error, Success]] =
+      Future.successful(Right(Success("update Dcatapit", None)))
   }
