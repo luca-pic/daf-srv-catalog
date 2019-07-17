@@ -36,12 +36,16 @@ class Nifi @Inject()(ws :WSClient, config: ConfigurationProvider) {
 
     getProcessors.flatMap { resp =>
       val res: EitherT[Future, ErrorWrapper, Success] = for {
-        id          <- ProcessHandler.step(extractIdFromJsonByFeedNameAndOrgName(resp, orgName, feedName))
-        revisionObj <- ProcessHandler.step(getProcessorRevision(id))
-        _           <- ProcessHandler.step(setStateProcessor(id, revisionObj.clientId, revisionObj.version, StopStateProcessorString))
-        _           <- ProcessHandler.step(setStateProcessor(id, revisionObj.clientId, revisionObj.version + 1, RunStateProcessorString))
-        res         <- ProcessHandler.step(setStateProcessor(id, revisionObj.clientId, revisionObj.version + 2, StopStateProcessorString))
-
+        a0          <- ProcessHandler.step(extractIdFromJsonByFeedNameAndOrgName(resp, orgName, feedName))
+        (id: String, step0: Int) = (a0._1, a0._2)
+        a1 <- ProcessHandler.step(step0, getProcessorRevision(id))
+        (revisionObj: NifiRevisionObject, step1: Int) = (a1._1, a1._2)
+        a2           <- ProcessHandler.step(step1, setStateProcessor(id, revisionObj.clientId, revisionObj.version, StopStateProcessorString))
+        (_, step2: Int) = (a2._1, a2._2)
+        a3           <- ProcessHandler.step(step2, setStateProcessor(id, revisionObj.clientId, revisionObj.version + 1, RunStateProcessorString))
+        (_, step3: Int) = (a3._1, a3._2)
+        a4           <- ProcessHandler.step(step3, setStateProcessor(id, revisionObj.clientId, revisionObj.version + 2, StopStateProcessorString))
+        (res, _) = (a4._1, a4._2)
       } yield res
 
       res.value.map {
@@ -189,11 +193,11 @@ class Nifi @Inject()(ws :WSClient, config: ConfigurationProvider) {
     logger.info(s"startRecoveryAreaProcessor: $componentId")
 
     val resp: EitherT[Future, ErrorWrapper, Success] = for{
-      a                  <- ProcessHandler.step2( getProcessorIdByComponentId(componentId, RecoveryAreaProcessorName) )
+      a                  <- ProcessHandler.step( getProcessorIdByComponentId(componentId, RecoveryAreaProcessorName) )
       (idProcRecoveryArea: String, step0: Int) = (a._1, a._2)
-      b                  <- ProcessHandler.step2( step0, getProcessorRevision(idProcRecoveryArea) )
+      b                  <- ProcessHandler.step( step0, getProcessorRevision(idProcRecoveryArea) )
       (nifiRevisionObject: NifiRevisionObject, step1: Int) = (b._1, b._2)
-      c                  <- ProcessHandler.step2( step1, configureRecoveyAreaProcessor(idProcRecoveryArea, pathRecoveryArea, nifiRevisionObject) )
+      c                  <- ProcessHandler.step( step1, configureRecoveyAreaProcessor(idProcRecoveryArea, pathRecoveryArea, nifiRevisionObject) )
       (response, _) = (c._1, c._2)
     } yield response
 

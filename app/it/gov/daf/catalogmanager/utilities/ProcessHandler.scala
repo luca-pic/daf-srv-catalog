@@ -19,23 +19,13 @@ case class NifiRevisionObject(clientId: String, version: Int)
 
 object ProcessHandler {
 
-  def step[S](tryresp: => Future[Either[Error, S]]): EitherT[Future, ErrorWrapper, S] = step(0, tryresp)
+  def step[S](tryresp: => Future[Either[Error, S]]): EitherT[Future, ErrorWrapper, (S, Int)] = step(0, tryresp)
 
-  def step2[S](tryresp: => Future[Either[Error, S]]): EitherT[Future, ErrorWrapper, (S, Int)] = step2(0, tryresp)
-
-  def step2[S](step: Int, fx: => Future[Either[Error, S]]): EitherT[Future, ErrorWrapper, (S, Int)] = {
+  def step[S](step: Int, fx: => Future[Either[Error, S]]): EitherT[Future, ErrorWrapper, (S, Int)] = {
 
     handleTries(step, fx) { a: S =>
       val newStep: Int = step + 1
       Right(a, newStep)
-    }
-  }
-
-  def step[S, T](step: Int, fx: => Future[Either[Error, S]]): EitherT[Future, ErrorWrapper, S] = {
-
-    handleTries(step, fx) { a: S =>
-      val newStep: Int = step + 1
-      Right(a)
     }
   }
 
