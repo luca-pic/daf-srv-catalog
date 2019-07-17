@@ -40,7 +40,247 @@ class CatalogRepositoryMongo extends CatalogRepository{
   val credentials = MongoCredential.createCredential(userName, source, password.toCharArray)
 
   import catalog_manager.yaml.BodyReads._
+  def updateDcatapit(catalog: Dataset, isDafSysAdmin: Boolean, credentialAuthor: String, lastSyncronized: Option[String]): Future[Either[Error, Success]] = {
+    val mongoClient = MongoClient(server, List(credentials))
+    val db = mongoClient(source)
+    val coll = db("catalog_test")
+    if(isDafSysAdmin){
+      Logger.debug("User is SysAdmin")
+      val query = MongoDBObject("dcatapit.name" -> catalog.name)
+      val result = coll.findOne(query)
+      result match {
+        case Some(mongoResponse) => {
+          Logger.debug("Dataset found with query")
+          val jsonString = com.mongodb.util.JSON.serialize(mongoResponse)
+          val json = Json.parse(jsonString)
+          val metaCatalogJs = json.validate[MetaCatalog]
+          metaCatalogJs match {
+            case s: JsSuccess[MetaCatalog] => {
+              if(s.get.dcatapit.owner_org == catalog.owner_org && s.get.dcatapit.theme == catalog.theme && s.get.dcatapit.title == catalog.title){
+                Logger.debug("owner_org ,theme and title correspond")
+                val newMeta = lastSyncronized.isEmpty match {
+                  case true => {
+                    Logger.debug("field lastSyncronized is empty")
+                    s.get.copy (dcatapit = catalog)
+                  }
+                  case false => {
+                    Logger.debug("field lastSyncronized is not empty ")
+                    s.get.operational.ext_opendata match {
+                      case Some(e) => {
+                        Logger.debug("object ExtOpenData is not empty ")
+                        val exod: ExtOpenData = e.copy(lastSyncronized = lastSyncronized)
+                        val op: Operational = s.get.operational.copy(ext_opendata = Some(exod))
+                        val meta: MetaCatalog = s.get.copy(dcatapit = catalog)
+                        val meta2: MetaCatalog = meta.copy(operational = op)
+                        meta2
+                      }
+                      case _ =>{
+                        Logger.debug("object ExtOpenData is empty ");  None
+                      }
+                    }
+                  }
+                }
+                newMeta match {
+                  case m: MetaCatalog =>{
+                    val json: JsValue = MetaCatalogWrites.writes (m)
+                    val obj = com.mongodb.util.JSON.parse (json.toString () ).asInstanceOf[DBObject]
+                    val responseUpdates = coll.update (query, obj)
+                    mongoClient.close ()
+                    if (responseUpdates.isUpdateOfExisting) {
+                      Logger.debug("success update")
+                      Future.successful(Right(Success("Mongo update: success", None)))
+                    }
+                    else {
+                      Logger.debug("fail update")
+                      Future.successful(Left(Error("Error update", Some(500), None)))
+                    }
+                  }
+                  case _ =>{
+                    Logger.debug("Error: ext_opendata is null")
+                    Future.successful(Left(Error ("Error update: ext_opendata is null", Some (400), None)))
+                  }
+                }
+              }
+              else{
+                Logger.debug("Error: fields not equal")
+                Future.successful(Left(Error("Error update: fields not equal", Some(401), None)))
+              }
+            }
+            case _ => {
+              Logger.debug("Error in parse of MetaCatalog")
+              Future.successful(Left(Error("Error update", Some(401), None)))
+            }
+          }
+        }
+        case _ => {
+          Logger.debug("Error: name of dataset not found")
+          Future.successful(Left(Error("Error update: name of dataset not found", Some(404), None)))
+        }
+      }
+    }
+    else {
+      Logger.debug("User not is SysAdmin")
+      val query = MongoDBObject("dcatapit.name" -> catalog.name)
+      val result = coll.findOne(query)
+      result match {
+        case Some(mongoResponse) => {
+          Logger.debug("Dataset found with query")
+          val jsonString = com.mongodb.util.JSON.serialize(mongoResponse)
+          val json = Json.parse(jsonString)
+          val metaCatalogJs = json.validate[MetaCatalog]
+          metaCatalogJs match {
+            case s: JsSuccess[MetaCatalog] => {
+              if(s.get.dcatapit.author == Some(credentialAuthor)){
+                Logger.debug("author corresponds")
+                if(s.get.dcatapit.owner_org == catalog.owner_org && s.get.dcatapit.theme == catalog.theme && s.get.dcatapit.title == catalog.title) {
+                  Logger.debug("owner_org ,theme and title correspond")
+                  val newMeta = lastSyncronized.isEmpty match {
+                    case true => {
+                      Logger.debug("field lastSyncronized is empty ")
+                      s.get.copy (dcatapit = catalog)
+                    }
+                    case false => {
+                      Logger.debug("field lastSyncronized is not empty")
+                      s.get.operational.ext_opendata match {
+                        case e: ExtOpenData => {
+                          Logger.debug("object ExtOpenData is not empty")
+                          val exod: ExtOpenData = e.copy(lastSyncronized = lastSyncronized)
+                          val op: Operational = s.get.operational.copy(ext_opendata = Some(exod))
+                          val meta: MetaCatalog = s.get.copy(dcatapit = catalog)
+                          val meta2: MetaCatalog = meta.copy(operational = op)
+                          meta2
+                        }
+                        case _ => {
+                          Logger.debug("object ExtOpenData is empty");  None
+                        }
+                      }
+                    }
+                  }
+                  newMeta match{
+                    case m: MetaCatalog =>{
+                      val json: JsValue = MetaCatalogWrites.writes(m)
+                      val obj = com.mongodb.util.JSON.parse (json.toString () ).asInstanceOf[DBObject]
+                      val responseUpdates = coll.update (query, obj)
+                      mongoClient.close ()
+                      if (responseUpdates.isUpdateOfExisting) {
+                        Logger.debug("success update")
+                        Future.successful(Right(Success("Mongo update: success", None)))
+                      }
+                      else{
+                        Logger.debug("fail update")
+                        Future.successful(Left(Error("Error update", Some(500), None)))
+                      }
+                    }
+                    case _ => {
+                        Logger.debug("Error: ext_opendata is null")
+                        Future.successful(Left(Error ("Error update: ext_opendata is null", Some (400), None)))
+                    }
+                  }
+                }
+                else {
+                  Logger.debug("Error: fields not equal")
+                  Future.successful(Left(Error("Error update: fields not equal", Some(401), None)))
+                }
+              }
+              else{
+                Logger.debug("Error: Author not equal")
+                Future.successful(Left(Error("Error update: Author not equal", Some(401), None)))
+              }
+            }
+            case _ => {
+              Logger.debug("Error in parse of MetaCatalog")
+              Future.successful(Left(Error("Error update: error in parse of MetaCatalog", Some(401), None)))
+            }
+          }
+        }
+        case _ => {
+          Logger.debug("Error: name of dataset not found")
+          Future.successful(Left(Error("Error update: name of dataset not found", Some(404), None)))
+        }
+      }
+    }
+  }
 
+  def setOperationalStateInactive(datasetName: String, isDafSysAdmin: Boolean, credentialAuthor: String): Future[Either[Error, Success]] = {
+    val mongoClient = MongoClient(server, List(credentials))
+    val db = mongoClient(source)
+    val coll = db("catalog_test")
+    if(isDafSysAdmin){
+      val query = MongoDBObject("dcatapit.name" -> datasetName)
+      val createQueryUpdateState: DBObject = new BasicDBObject("$set", new BasicDBObject("operational.state", "inactive"))
+      val responseUpdates = coll.update(query, createQueryUpdateState)
+      mongoClient.close()
+      if (responseUpdates.isUpdateOfExisting){
+        Future.successful(Right(Success("Mongo update: success", None)))
+      }
+      else {
+        Future.successful(Left(Error("Error update (is admin)", Some(404), None)))
+      }
+    }
+      else {
+        val query = $and(
+          MongoDBObject("dcatapit.name" -> datasetName),
+          MongoDBObject("dcatapit.author" -> credentialAuthor)
+        )
+        val createQueryUpdateState: DBObject = new BasicDBObject("$set", new BasicDBObject("operational.state", "inactive"))
+        val responseUpdates = coll.update(query, createQueryUpdateState)
+        mongoClient.close()
+        if (responseUpdates.isUpdateOfExisting)
+          Future.successful(Right(Success("Mongo update: success", None)))
+        else
+          Future.successful(Left(Error(s"$credentialAuthor Error update (and not is admin)", Some(404), None)))
+    }
+  }
+
+  def isPresentOpenData(dataSetFields: DataSetFields): Future[Either[Error, Success]] = {
+    val mongoClient = MongoClient(server, List(credentials))
+    val db = mongoClient(source)
+    val coll = db("catalog_test")
+    val query = $and(
+      MongoDBObject("dcatapit.owner_org" -> dataSetFields.organization),
+      MongoDBObject("operational.ext_opendata.name" -> dataSetFields.dataSetName),
+      MongoDBObject("operational.ext_opendata.resourceName" -> dataSetFields.resourceName),
+      MongoDBObject("dcatapit.privatex" -> false),
+      MongoDBObject("operational.state" -> "active")
+    )
+    val result = coll.findOne(query)
+    mongoClient.close()
+    val ispres = result match {
+      case Some(_) => Right(Success(s"dataset found -> (${dataSetFields.organization}, ${dataSetFields.dataSetName}, ${dataSetFields.resourceName})", None))
+      case _       => Left(Error(s"dataset not found -> (${dataSetFields.organization}, ${dataSetFields.dataSetName}, ${dataSetFields.resourceName})", None, None))
+    }
+    Future.successful(ispres)
+  }
+
+  def getByNameOpenData(dataSetFields: DataSetFields): Option[MetaCatalog] = {
+    val mongoClient = MongoClient(server, List(credentials))
+    val db = mongoClient(source)
+    val coll = db("catalog_test")
+    val query = $and(
+      MongoDBObject("dcatapit.owner_org" -> dataSetFields.organization),
+      MongoDBObject("operational.ext_opendata.name" -> dataSetFields.dataSetName),
+      MongoDBObject("operational.ext_opendata.resourceName" -> dataSetFields.resourceName),
+      MongoDBObject("dcatapit.privatex" -> false),
+      MongoDBObject("operational.state" -> "active")
+
+    )
+    val result = coll.findOne(query)
+    mongoClient.close()
+    val metaCatalog = result match {
+      case Some(mongoResponse) => {
+        val jsonString = com.mongodb.util.JSON.serialize(mongoResponse)
+        val json = Json.parse(jsonString)
+        val metaCatalogJs = json.validate[MetaCatalog]
+        val metaCatalog = metaCatalogJs match {
+          case s: JsSuccess[MetaCatalog] => Some(s.get)
+          case _: JsError => None
+        }
+        metaCatalog
+      }
+      case _ => None
+    }
+    metaCatalog
+  }
   def listCatalogs(page :Option[Int], limit :Option[Int]) :Seq[MetaCatalog] = {
 
     val mongoClient = MongoClient(server, List(credentials))

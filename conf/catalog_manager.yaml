@@ -447,6 +447,143 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
+  "/open-data/ispresent":
+    post:
+      tags:
+        - DatasetCatalog
+      description: get if the dataset is present
+      operationId: isPresentOpenData
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      parameters:
+      - name: dataSetFields
+        in: body
+        description: parameters for to find a Dataset
+        required: true
+        schema:
+          $ref: '#/definitions/DataSetFields'
+      responses:
+        200:
+          description: dataset is presentOpenData
+          schema:
+            type: Success
+            $ref: '#/definitions/Success'
+        404:
+          description: dataset is not present
+          schema:
+            type: object
+            $ref: '#/definitions/Error'
+        500:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  "/open-data/getbyname":
+    post:
+      tags:
+        - DatasetCatalog
+      description: get Dataset by name
+      operationId: getByNameOpenData
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+      - name: dataSetFields
+        in: body
+        description: parameters for to find a Dataset
+        required: true
+        schema:
+          $ref: '#/definitions/DataSetFields'
+      responses:
+        200:
+          description: get dataset
+          schema:
+            type: object
+            $ref: '#/definitions/MetaCatalog'
+        404:
+          description: Dataset not found
+          schema:
+            type: object
+            $ref: '#/definitions/Error'
+        500:
+          description: Error
+          schema:
+            $ref: '#/definitions/Error'
+  "/catalog-ds/updatedcatapit":
+    put:
+      tags:
+        - DatasetCatalog
+      description: update all dcatapit
+      operationId: updateDcatapit
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+      - name: catalog
+        in: body
+        description: new dcatapit for the update
+        required: true
+        schema:
+          $ref: '#/definitions/Dataset'
+      - name: lastSyncronized
+        in: query
+        description: date of last syncronized
+        type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/Success'
+        400:
+          description: Error
+          schema:
+            $ref: '#/definitions/Error'
+        401:
+          description: Error
+          schema:
+            $ref: '#/definitions/Error'
+        404:
+          description: Error
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: Error
+          schema:
+            $ref: '#/definitions/Error'
+  "/catalog-ds/setinactive/{datasetName}":
+    get:
+      tags:
+        - DatasetCatalog
+      description: Set Operational.state to inactive
+      operationId: setOperationalStateInactive
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+      - name: datasetName
+        in: path
+        description: name of the dataset
+        required: true
+        type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            type: object
+            $ref: '#/definitions/Success'
+        404:
+          description: Error
+          schema:
+            type: object
+            $ref: '#/definitions/Error'
+        500:
+          description: Error
+          schema:
+            $ref: '#/definitions/Error'
   "/catalog-ds/linked/{name}":
     post:
       tags:
