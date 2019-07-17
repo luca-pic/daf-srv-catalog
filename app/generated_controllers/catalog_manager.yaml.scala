@@ -50,7 +50,7 @@ import scala.util
 
 package catalog_manager.yaml {
     // ----- Start of unmanaged code area for package Catalog_managerYaml
-                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                        
     // ----- End of unmanaged code area for package Catalog_managerYaml
     class Catalog_managerYaml @Inject() (
         // ----- Start of unmanaged code area for injections Catalog_managerYaml
@@ -1018,33 +1018,39 @@ package catalog_manager.yaml {
                     }
 
                     createFeed onComplete (r => Logger.logger.debug(s"kyloResp ${r.get.status}: ${r.get.body}"))
-                    
+
                     createFeed.flatMap{
-                      case res: WSResponse if res.status == 200 && res.body.isDefined && (res.json \ "success").as[Boolean] =>
-                         val nifiResp: Future[Either[Error, Success]] = Try{(res.json \ "feedProcessGroup" \ "processGroupEntity" \ "id").as[String]} match {
-                             case Failure(exception) => {
-                                 logger.debug(s"componentId not found in nifi: ${exception.getMessage}")
-                                 Future.successful(Left(Error(s"componentId not found in nifi: ${exception.getMessage}", Some(500), None)))
-                             }
-                             case util.Success(componentId) => {
-                                 logger.debug(s"componentId: $componentId")
-                                 Nifi.startRecoveryAreaProcessor(componentId, pathRecoveryArea) map {
-                                     case Right(success) =>
-                                         logger.debug(s"feed created and started: ${success.message}")
-                                         Right(yaml.Success("Feed started", Some(success.message)))
-                                     case Left(error) =>
-                                         logger.debug(s"error in start recovery area: ${error.message}")
-                                         Left(error)
-                                }
-                             }
-                         }
+                      case res: WSResponse if res.status == 200 && res.body.isDefined && (res.json \ "success").as[Boolean]=> {
+                          if (feed.operational.dataset_proc.isDefined && feed.operational.dataset_proc.get.merge_strategy.equals("sync"))
+                              StartKyloFedd200(Success(s"Feed ${feed.dcatapit.title.getOrElse("")} started", None))
+                          else {
+                              val nifiResp: Future[Either[Error, Success]] = Try {
+                                  (res.json \ "feedProcessGroup" \ "processGroupEntity" \ "id").as[String]
+                              } match {
+                                  case Failure(exception) => {
+                                      logger.debug(s"componentId not found in nifi: ${exception.getMessage}")
+                                      Future.successful(Left(Error(s"componentId not found in nifi: ${exception.getMessage}", Some(500), None)))
+                                  }
+                                  case util.Success(componentId) => {
+                                      logger.debug(s"componentId: $componentId")
+                                      Nifi.startRecoveryAreaProcessor(componentId, pathRecoveryArea) map {
+                                          case Right(success) =>
+                                              logger.debug(s"feed created and started: ${success.message}")
+                                              Right(yaml.Success("Feed started", Some(success.message)))
+                                          case Left(error) =>
+                                              logger.debug(s"error in start recovery area: ${error.message}")
+                                              Left(error)
+                                      }
+                                  }
+                              }
 
-                          nifiResp.flatMap{
-                              case Right(success) => StartKyloFedd200(success)
-                              case Left(error)    => StartKyloFedd401(error)
+                              nifiResp.flatMap {
+                                  case Right(success) => StartKyloFedd200(success)
+                                  case Left(error) => StartKyloFedd401(error)
 
+                              }
                           }
-
+                      }
                       case _ => StartKyloFedd401(Error("Feed not created", Option(401), None))
 
                     }
