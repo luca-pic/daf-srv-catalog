@@ -1,26 +1,27 @@
 package it.gov.daf.catalogmanager.repository.catalog
-
-import catalog_manager.yaml.{Dataset, DatasetNameFields, Error, LinkedDataset, LinkedParams, MetaCatalog, MetadataCat, ResponseWrites, Success}
+import catalog_manager.yaml.ResponseWrites.MetaCatalogWrites
+import catalog_manager.yaml.{DataSetFields, Dataset, DatasetNameFields, Error, ExtOpenData, LinkedDataset, LinkedParams, MetaCatalog, Operational, ResponseWrites, Success}
 import com.mongodb
-import com.mongodb.DBObject
+import com.mongodb.{BasicDBObject, DBObject}
 import com.mongodb.casbah.MongoClient
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import com.mongodb.casbah.Imports._
-import com.sksamuel.elastic4s.http.ElasticDsl.{search, termsAgg}
+import com.sksamuel.elastic4s.http.ElasticDsl._
 import it.gov.daf.catalogmanager.utilities.{CatalogManager, ConfigReader}
 import play.api.libs.ws.WSClient
 import play.api.Logger
 import com.sksamuel.elastic4s.http.search.SearchResponse
 import com.sksamuel.elastic4s.ElasticsearchClientUri
-import com.sksamuel.elastic4s.http.ElasticDsl._
 import com.sksamuel.elastic4s.http.HttpClient
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+
 
 /**
   * Created by ale on 18/05/17.
   */
-class CatalogRepositoryMongo extends  CatalogRepository{
+class CatalogRepositoryMongo extends CatalogRepository{
 
   private val mongoHost: String = ConfigReader.getDbHost
   private val mongoPort = ConfigReader.getDbPort
@@ -38,7 +39,6 @@ class CatalogRepositoryMongo extends  CatalogRepository{
   val server = new ServerAddress(mongoHost, 27017)
   val credentials = MongoCredential.createCredential(userName, source, password.toCharArray)
 
-  import scala.concurrent.ExecutionContext.Implicits.global
   import catalog_manager.yaml.BodyReads._
 
   def listCatalogs(page :Option[Int], limit :Option[Int]) :Seq[MetaCatalog] = {
@@ -218,7 +218,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     metaCatalog
   }
 
-  def createCatalogExtOpenData(metaCatalog: MetaCatalog, callingUserid :MetadataCat, ws :WSClient) :Success = {
+  def createCatalogExtOpenData(metaCatalog: MetaCatalog, callingUserid :Option[String], ws :WSClient) :Success = {
 
     import catalog_manager.yaml.ResponseWrites.MetaCatalogWrites
 
@@ -271,7 +271,7 @@ class CatalogRepositoryMongo extends  CatalogRepository{
     Success(msg, Some(msg))
   }
 
-  def createCatalog(metaCatalog: MetaCatalog, callingUserid :MetadataCat, ws :WSClient): Either[Error, Success] = {
+  def createCatalog(metaCatalog: MetaCatalog, callingUserid :Option[String], ws :WSClient): Either[Error, Success] = {
 
     import catalog_manager.yaml.ResponseWrites.MetaCatalogWrites
 
