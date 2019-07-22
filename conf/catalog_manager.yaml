@@ -2058,10 +2058,10 @@ definitions:
 #        description: List of ingestion pipeline to be applied, in order of declaration, to the data to be ingested.
 #        items:
 #          $ref: '#/definitions/IngestionPipeline'
-#      storage_info:
-#        description: Information on the storage to be used to save the dataset.
-#        type: object
-#        $ref: '#/definitions/StorageInfo'
+      storage_info:
+        description: Information on the storage to be used to save the dataset.
+        type: object
+        $ref: '#/definitions/StorageInfo'
       dataset_type:
         type: string
         description: --DEPRECATED, use dataset_proc.dataset_type instead-- It tells whether the dataset is at rest ('batch') or realtime stream ('stream') and, orthogonally, if it is of type 'opendata' (from  national catalogue), in which case it will have a suffix '_opendata'.
@@ -2271,13 +2271,13 @@ definitions:
 #      param:
 #        type: string
 #        description: Other parameters to be passed in JSON format. It will be None by default.
-#  StorageInfo:
-#    type: object
-#    properties:
-#      hdfs:
-#        type: object
-#        description: StorageHdfs object that contains info for the HDFS storage.
-#        $ref: '#/definitions/StorageHdfs'
+  StorageInfo:
+    type: object
+    properties:
+      hdfs:
+        type: object
+        description: StorageHdfs object that contains info for the HDFS storage.
+        $ref: '#/definitions/StorageHdfs'
 #      kudu:
 #        type: object
 #        description: StorageKudu objects info for the Kudu storage.
@@ -2294,21 +2294,21 @@ definitions:
 #        type: object
 #        description: MongoDB storage
 #        $ref: '#/definitions/StorageMongo'
-#  StorageHdfs:
-#    type: object
-#    description: If compiled, will tell the ingestion manager to store the data into HDFS.
-#    required:
-#      - name
-#    properties:
-#      name:
-#        type: string
-#        description: It is the name of the HDFS storage configuration to use. It is 'hdfs_daf' by default, with which will follow the DAF path convention.
-#      path:
-#        type: string
-#        description: It is the hdfs path where data will be stored. It is None if the default 'hdfs_daf' is used.
-#      param:
-#        type: string
-#        description: Other parameters to be passed in JSON format. It will be None by default.
+  StorageHdfs:
+    type: object
+    description: If compiled, will tell the ingestion manager to store the data into HDFS.
+    required:
+      - name
+    properties:
+      name:
+        type: string
+        description: It is the name of the HDFS storage configuration to use. It is 'hdfs_daf' by default, with which will follow the DAF path convention.
+      path:
+        type: string
+        description: It is the hdfs path where data will be stored. It is None if the default 'hdfs_daf' is used.
+      param:
+        type: string
+        description: Other parameters to be passed in JSON format. It will be None by default.
 #  StorageKudu:
 #    type: object
 #    description: If compiled, will tell the ingestion manager to store the data into Kudu.
